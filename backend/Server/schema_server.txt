@@ -58,12 +58,9 @@ CREATE TABLE `schema_server`.`registration_sensor` (
     REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB;
 
-
-
-/////////////////////////
-
 -- Tạo bảng Air Conditioner
 CREATE TABLE `schema_server`.`air_conditioner` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
   `ac_id` INT NOT NULL,
   `set_temp` FLOAT NOT NULL,
   `control_mode` INT NOT NULL,
@@ -74,6 +71,7 @@ CREATE TABLE `schema_server`.`air_conditioner` (
 
 -- Tạo bảng Fan
 CREATE TABLE `schema_server`.`fan` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
   `fan_id` INT NOT NULL,
   `set_speed` REAL NOT NULL,
   `control_mode` INT NOT NULL,
@@ -84,6 +82,7 @@ CREATE TABLE `schema_server`.`fan` (
 
 -- Tạo bảng Sensor Node
 CREATE TABLE `schema_server`.`sensor_node` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
   `sensor_id` INT NOT NULL,
   `temp` REAL NOT NULL,
   `wind` REAL NOT NULL,
@@ -95,6 +94,7 @@ CREATE TABLE `schema_server`.`sensor_node` (
 
 -- Tạo bảng Energy Measure
 CREATE TABLE `schema_server`.`energy_measure` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
   `em_id` INT NOT NULL,
   `voltage` REAL NOT NULL,
   `current` REAL NOT NULL,
