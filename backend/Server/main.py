@@ -297,140 +297,6 @@ def delete_room(room_id):
         return jsonify({"error": "Failed to delete room", "details": str(e)}), 500
 
 # air_conditioner
-@app.route('/air_conditioner/getall', methods=['GET'])
-def acGetAll():
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM air_conditioner")
-    key = [desc[0] for desc in cursor.description]
-    result = [dict(zip(key, row)) for row in cursor.fetchall()]
-
-    cursor.close()
-    db.close()
-
-    return jsonify(result), 200
-
-@app.route('/air_conditioner/insert', methods=['POST'])
-def insertAC():
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-    set_temp = flask.request.json.get('set_temp')
-    control_mode = flask.request.json.get('control_mode')
-    state = flask.request.json.get('state')
-    status = flask.request.json.get('status')
-
-    cursor.execute("INSERT INTO air_conditioner (set_temp, control_mode, state, status) "
-                   "VALUES (%s, %s, %s, %s)", (set_temp, control_mode, state, status))
-    db.commit()
-
-    last_inserted_id = cursor.lastrowid  # Lấy ID của hàng vừa được thêm
-
-    # Lấy thông tin của bản ghi vừa được thêm
-    cursor.execute("SELECT * FROM air_conditioner WHERE ac_id = %s", (last_inserted_id,))
-    key = [desc[0] for desc in cursor.description]
-    new_record = dict(zip(key, cursor.fetchone()))
-
-    cursor.close()
-    db.close()
-
-    return jsonify(new_record), 201
-
-@app.route('/air_conditioner/update/<ac_id>', methods=['PUT'])
-def updateAC(ac_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
-
-    cursor = db.cursor()
-
-    # Lấy dữ liệu đầu vào từ yêu cầu
-    set_temp = request.json.get('set_temp')
-    control_mode = request.json.get('control_mode')
-    state = request.json.get('state')
-    status = request.json.get('status')
-
-    # Chuẩn bị truy vấn SQL để cập nhật
-    query_parts = []
-    update_values = []
-
-    if set_temp is not None:
-        query_parts.append("set_temp = %s")
-        update_values.append(set_temp)
-
-    if control_mode is not None:
-        query_parts.append("control_mode = %s")
-        update_values.append(control_mode)
-
-    if state is not None:
-        query_parts.append("state = %s")
-        update_values.append(state)
-
-    if status is not None:
-        query_parts.append("status = %s")
-        update_values.append(status)
-
-    if not query_parts:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "No updateable fields provided"}), 400  # Không có trường cần cập nhật
-
-    query = f"UPDATE air_conditioner SET {', '.join(query_parts)} WHERE ac_id = %s"
-    update_values.append(ac_id)
-
-    try:
-        cursor.execute(query, tuple(update_values))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Air conditioner updated successfully"}), 200
-
-    except Error as e:
-        print("Error during update:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to update air conditioner"}), 500
-
-@app.route('/air_conditioner/delete/<ac_id>', methods=['DELETE'])
-def deleteAC(ac_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
-
-    cursor = db.cursor()
-
-    try:
-        # Kiểm tra xem bản ghi có tồn tại không
-        cursor.execute("SELECT * FROM air_conditioner WHERE ac_id = %s", (ac_id,))
-        record = cursor.fetchone()
-
-        if not record:
-            cursor.close()
-            db.close()
-            return jsonify({"error": "Air conditioner not found"}), 404  # Nếu không tìm thấy bản ghi
-
-        # Nếu bản ghi tồn tại, tiến hành xóa
-        cursor.execute("DELETE FROM air_conditioner WHERE ac_id = %s", (ac_id,))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Air conditioner deleted successfully"}), 204  # 204 (No Content)
-
-    except Error as e:
-        print("Error during deletion:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to delete air conditioner"}), 500
-
 @app.route('/registration_ac/getall', methods=['GET'])
 def get_all_registration_ac():
     db = create_connection()
@@ -455,16 +321,13 @@ def insert_registration_ac():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')  # Dữ liệu nhận từ yêu cầu POST
-    ac_id = request.json.get('ac_id')
 
-    if room_id is None or ac_id is None:
+    if room_id is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id and ac_id are required"}), 400  # Yêu cầu không hợp lệ
+        return jsonify({"error": "room_id is required"}), 400  # Yêu cầu không hợp lệ
 
-    data = (room_id, ac_id)
-
-    cursor.execute("INSERT INTO registration_ac (room_id, ac_id) VALUES (%s, %s)", data)
+    cursor.execute("INSERT INTO registration_ac (room_id) VALUES (%s)", (room_id,))
     db.commit()
 
     cursor.close()
@@ -544,6 +407,52 @@ def delete_registration_ac(room_id, ac_id):
         db.close()
         return jsonify({"error": "Failed to delete Registration AC"}), 500
 
+@app.route('/air_conditioner/getall', methods=['GET'])
+def acGetAll():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM air_conditioner")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
+@app.route('/air_conditioner/insert', methods=['POST'])
+def insertAC():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    try:
+        cursor = db.cursor()
+        data = request.get_json()
+
+        ac_id = data.get('ac_id')
+        set_temp = data.get('set_temp')
+        control_mode = data.get('control_mode')
+        state = data.get('state')
+        status = data.get('status')
+
+        if None in [ac_id, set_temp, control_mode, state, status]:
+            return jsonify({"error": "All fields are required"}), 400
+
+        cursor.execute("INSERT INTO air_conditioner (ac_id, set_temp, control_mode, state, status) "
+                       "VALUES (%s, %s, %s, %s, %s)", (ac_id, set_temp, control_mode, state, status))
+        db.commit()
+
+        return jsonify({"message": "Air Conditioner added successfully"}), 201
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
 @app.route('/fan/getall', methods=['GET'])
 def get_all_fans():
     db = create_connection()
@@ -567,6 +476,7 @@ def insert_fan():
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
+    fan_id = flask.request.json.get('fan_id')
     set_speed = request.json.get('set_speed')
     control_mode = request.json.get('control_mode')
     set_time = request.json.get('set_time')
@@ -575,98 +485,14 @@ def insert_fan():
     if None in (set_speed, control_mode, set_time, status):
         return jsonify({"error": "Missing required fields"}), 400
 
-    query = "INSERT INTO fan (set_speed, control_mode, set_time, status) VALUES (%s, %s, %s, %s)"
-    cursor.execute(query, (set_speed, control_mode, set_time, status))
+    query = "INSERT INTO fan (fan_id, set_speed, control_mode, set_time, status) VALUES (%s, %s, %s, %s, %s)"
+    cursor.execute(query, (fan_id, set_speed, control_mode, set_time, status))
     db.commit()
 
     cursor.close()
     db.close()
 
     return jsonify({"message": "Fan added successfully"}), 201
-
-@app.route('/fan/update/<fan_id>', methods=['PUT'])
-def update_fan(fan_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-
-    set_speed = request.json.get('set_speed')
-    control_mode = request.json.get('control_mode')
-    set_time = request.json.get('set_time')
-    status = request.json.get('status')
-
-    update_values = []
-    query_parts = []
-
-    if set_speed is not None:
-        query_parts.append("set_speed = %s")
-        update_values.append(set_speed)
-
-    if control_mode is not None:
-        query_parts.append("control_mode = %s")
-        update_values.append(control_mode)
-
-    if set_time is not None:
-        query_parts.append("set_time = %s")
-        update_values.append(set_time)
-
-    if status is not None:
-        query_parts.append("status = %s")
-        update_values.append(status)
-
-    if not query_parts:
-        return jsonify({"error": "No fields to update"}), 400  # Không có gì để cập nhật
-
-    query = f"UPDATE fan SET {', '.join(query_parts)} WHERE fan_id = %s"
-    update_values.append(fan_id)
-
-    try:
-        cursor.execute(query, tuple(update_values))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Fan updated successfully"}), 200  # 200 (OK)
-
-    except Error as e:
-        print("Error during update:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to update fan"}), 500
-
-@app.route('/fan/delete/<fan_id>', methods=['DELETE'])
-def delete_fan(fan_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-
-    try:
-        cursor.execute("SELECT * FROM fan WHERE fan_id = %s", (fan_id,))
-        record = cursor.fetchone()
-
-        if not record:
-            cursor.close()
-            db.close()
-            return jsonify({"error": "Fan not found"}), 404
-
-        cursor.execute("DELETE FROM fan WHERE fan_id = %s", (fan_id,))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Fan deleted successfully"}), 204  # 204 (No Content)
-
-    except Error as e:
-        print("Error during deletion:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to delete fan"}), 500
 
 @app.route('/registration_fan/getall', methods=['GET'])
 def get_all_registration_fan():
@@ -692,12 +518,11 @@ def insert_registration_fan():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')
-    fan_id = request.json.get('fan_id')
 
-    if room_id is None or fan_id is None:
+    if room_id is None:
         return jsonify({"error": "room_id and fan_id are required"}), 400
 
-    cursor.execute("INSERT INTO registration_fan (room_id, fan_id) VALUES (%s, %s)", (room_id, fan_id))
+    cursor.execute("INSERT INTO registration_fan (room_id) VALUES (%s)", (room_id,))
     db.commit()
 
     cursor.close()
@@ -802,6 +627,7 @@ def insert_energy_measure():
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
 
     cursor = db.cursor()
+    em_id = request.json.get('em_id')
     voltage = request.json.get('voltage')
     current = request.json.get('current')
     frequency = request.json.get('frequency')
@@ -810,114 +636,20 @@ def insert_energy_measure():
     status = request.json.get('status')
 
     # Kiểm tra các trường bắt buộc
-    if None in (voltage, current, frequency, active_power, power_factor, status):
+    if None in (em_id, voltage, current, frequency, active_power, power_factor, status):
         cursor.close()
         db.close()
         return jsonify({"error": "Missing required fields"}), 400  # Lỗi yêu cầu không hợp lệ
 
-    query = "INSERT INTO energy_measure (voltage, current, frequency, active_power, power_factor, status) VALUES (%s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (voltage, current, frequency, active_power, power_factor, status))
+    query = ("INSERT INTO energy_measure (em_id, voltage, current, frequency, active_power, power_factor, status) "
+             "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+    cursor.execute(query, (em_id, voltage, current, frequency, active_power, power_factor, status))
     db.commit()
 
     cursor.close()
     db.close()
 
     return jsonify({"message": "Energy measure added successfully"}), 201  # 201 (Created)
-
-@app.route('/energy_measure/update/<em_id>', methods=['PUT'])
-def update_energy_measure(em_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-
-    voltage = request.json.get('voltage')
-    current = request.json.get('current')
-    frequency = request.json.get('frequency')
-    active_power = request.json.get('active_power')
-    power_factor = request.json.get('power_factor')
-    status = request.json.get('status')
-
-    update_values = []
-    query_parts = []
-
-    if voltage is not None:
-        query_parts.append("voltage = %s")
-        update_values.append(voltage)
-
-    if current is not None:
-        query_parts.append("current = %s")
-        update_values.append(current)
-
-    if frequency is not None:
-        query_parts.append("frequency = %s")
-        update_values.append(frequency)
-
-    if active_power is not None:
-        query_parts.append("active_power = %s")
-        update_values.append(active_power)
-
-    if power_factor is not None:
-        query_parts.append("power_factor = %s")
-        update_values.append(power_factor)
-
-    if status is not None:
-        query_parts.append("status = %s")
-        update_values.append(status)
-
-    if not query_parts:
-        return jsonify({"error": "No fields to update"}), 400  # Không có trường để cập nhật
-
-    query = f"UPDATE energy_measure SET {', '.join(query_parts)} WHERE em_id = %s"
-    update_values.append(em_id)
-
-    try:
-        cursor.execute(query, tuple(update_values))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Energy measure updated successfully"}), 200  # 200 (OK)
-
-    except Error as e:
-        print("Error during update:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to update energy measure"}), 500  # Lỗi máy chủ nội bộ
-
-@app.route('/energy_measure/delete/<em_id>', methods=['DELETE'])
-def delete_energy_measure(em_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-
-    try:
-        # Kiểm tra xem bản ghi có tồn tại không
-        cursor.execute("SELECT * FROM energy_measure WHERE em_id = %s", (em_id,))
-        record = cursor.fetchone()
-
-        if not record:
-            cursor.close()
-            db.close()
-            return jsonify({"error": "Energy measure not found"}), 404  # Nếu không tìm thấy
-
-        cursor.execute("DELETE FROM energy_measure WHERE em_id = %s", (em_id,))
-        db.commit()  # Lưu thay đổi
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Energy measure deleted successfully"}), 204  # 204 (No Content)
-
-    except Error as e:
-        print("Error during deletion:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to delete energy measure"}), 500  # Lỗi máy chủ nội bộ
 
 @app.route('/registration_em/getall', methods=['GET'])
 def get_all_registration_em():
@@ -943,12 +675,11 @@ def insert_registration_em():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')
-    em_id = request.json.get('em_id')
 
-    if room_id is None or em_id is None:
+    if room_id is None:
         return jsonify({"error": "room_id and em_id are required"}), 400
 
-    cursor.execute("INSERT INTO registration_em (room_id, em_id) VALUES (%s, %s)", (room_id, em_id))
+    cursor.execute("INSERT INTO registration_em (room_id) VALUES (%s)", (room_id,))
     db.commit()
 
     cursor.close()
@@ -1030,99 +761,6 @@ def insert_sensor_node():
 
     return jsonify({"message": "Sensor node added successfully"}), 201  # 201 (Created)
 
-@app.route('/sensor_node/update/<sensor_id>', methods=['PUT'])
-def update_sensor_node(sensor_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
-
-    cursor = db.cursor()
-
-    # Lấy dữ liệu từ yêu cầu PUT
-    temp = request.json.get('temp')
-    wind = request.json.get('wind')
-    humid = request.json.get('humid')
-    pm25 = request.json.get('pm25')
-    status = request.json.get('status')
-
-    update_values = []
-    query_parts = []
-
-    if temp is not None:
-        query_parts.append("temp = %s")
-        update_values.append(temp)
-
-    if wind is not None:
-        query_parts.append("wind = %s")
-        update_values.append(wind)
-
-    if humid is not None:
-        query_parts.append("humid = %s")
-        update_values.append(humid)
-
-    if pm25 is not None:
-        query_parts.append("pm25 = %s")
-        update_values.append(pm25)
-
-    if status is not None:
-        query_parts.append("status = %s")
-        update_values.append(status)
-
-    if not query_parts:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
-
-    query = f"UPDATE sensor_node SET {', '.join(query_parts)} WHERE sensor_id = %s"
-    update_values.append(sensor_id)
-
-    try:
-        cursor.execute(query, tuple(update_values))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Sensor node updated successfully"}), 200  # 200 (OK)
-
-    except Error as e:
-        print("Error during update:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to update sensor node"}), 500  # Lỗi máy chủ nội bộ
-
-@app.route('/sensor_node/delete/<int:sensor_id>', methods=['DELETE'])
-def delete_sensor_node(sensor_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
-
-    cursor = db.cursor()
-
-    try:
-        cursor.execute("SELECT * FROM sensor_node WHERE sensor_id = %s", (sensor_id,))
-        record = cursor.fetchone()
-
-        if not record:
-            cursor.close()
-            db.close()
-            return jsonify({"error": "Sensor node not found"}), 404  # 404 (Not Found)
-
-        cursor.execute("DELETE FROM sensor_node WHERE sensor_id = %s", (sensor_id,))
-        db.commit()
-
-        cursor.close()
-        db.close()
-
-        return jsonify({"message": "Sensor node deleted successfully"}), 204  # 204 (No Content)
-
-    except Error as e:
-        print("Error during deletion:", e)
-        cursor.close()
-        db.close()
-        return jsonify({"error": "Failed to delete sensor node"}), 500
-
-
 @app.route('/registration_sensor/getall', methods=['GET'])
 def get_all_registration_sensor():
     db = create_connection()
@@ -1147,15 +785,14 @@ def insert_registration_sensor():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')  # Dữ liệu từ yêu cầu POST
-    sensor_id = request.json.get('sensor_id')
 
-    if room_id is None or sensor_id is None:
+    if room_id is None:
         cursor.close()
         db.close()
         return jsonify({"error": "room_id and sensor_id are required"}), 400  # Thiếu tham số
 
-    query = "INSERT INTO registration_sensor (room_id, sensor_id) VALUES (%s, %s)"
-    cursor.execute(query, (room_id, sensor_id))
+    query = "INSERT INTO registration_sensor (room_id) VALUES (%s)"
+    cursor.execute(query, (room_id,))
     db.commit()
 
     cursor.close()
