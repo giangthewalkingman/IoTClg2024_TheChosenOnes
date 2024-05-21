@@ -21,115 +21,94 @@ CREATE TABLE `schema_server`.`room` (
     ON UPDATE RESTRICT
 ) ENGINE = InnoDB;
 
+
+-- Tạo bảng registration_ac
+CREATE TABLE `schema_server`.`registration_ac` (
+  `room_id` INT NOT NULL,
+  `ac_id` INT NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`ac_id`),
+  CONSTRAINT `fk_room_id` FOREIGN KEY (`room_id`)
+    REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB;
+
+-- Tạo bảng registration_fan
+CREATE TABLE `schema_server`.`registration_fan` (
+  `room_id` INT NOT NULL,
+  `fan_id` INT NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`fan_id`),
+  CONSTRAINT `fk_room_id_fan` FOREIGN KEY (`room_id`)
+    REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB;
+
+-- Tạo bảng registration_em
+CREATE TABLE `schema_server`.`registration_em` (
+  `room_id` INT NOT NULL,
+  `em_id` INT NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`em_id`),
+  CONSTRAINT `fk_room_id_em` FOREIGN KEY (`room_id`)
+    REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB;
+
+-- Tạo bảng registration_sensor
+CREATE TABLE `schema_server`.`registration_sensor` (
+  `room_id` INT NOT NULL,
+  `sensor_id` INT NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`sensor_id`),
+  CONSTRAINT `fk_room_id_sensor` FOREIGN KEY (`room_id`)
+    REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB;
+
+
+
+/////////////////////////
+
 -- Tạo bảng Air Conditioner
 CREATE TABLE `schema_server`.`air_conditioner` (
-  `ac_id` INT NOT NULL AUTO_INCREMENT,
-  `set_temp` REAL NOT NULL,
+  `ac_id` INT NOT NULL,
+  `set_temp` FLOAT NOT NULL,
   `control_mode` INT NOT NULL,
   `state` INT NOT NULL,
   `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` INT NOT NULL,
-  PRIMARY KEY (`ac_id`)
+  `status` INT NOT NULL
 ) ENGINE = InnoDB;
 
 -- Tạo bảng Fan
 CREATE TABLE `schema_server`.`fan` (
-  `fan_id` INT NOT NULL AUTO_INCREMENT,
+  `fan_id` INT NOT NULL,
   `set_speed` REAL NOT NULL,
   `control_mode` INT NOT NULL,
   `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `set_time` INT NOT NULL,
-  `status` INT NOT NULL,
-  PRIMARY KEY (`fan_id`)
+  `status` INT NOT NULL
 ) ENGINE = InnoDB;
 
 -- Tạo bảng Sensor Node
 CREATE TABLE `schema_server`.`sensor_node` (
-  `sensor_id` INT NOT NULL AUTO_INCREMENT,
+  `sensor_id` INT NOT NULL,
   `temp` REAL NOT NULL,
   `wind` REAL NOT NULL,
   `humid` REAL NOT NULL,
   `pm25` INT NOT NULL,
   `status` INT NOT NULL,
-  `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`sensor_id`)
+  `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE = InnoDB;
 
 -- Tạo bảng Energy Measure
 CREATE TABLE `schema_server`.`energy_measure` (
-  `em_id` INT NOT NULL AUTO_INCREMENT,
+  `em_id` INT NOT NULL,
   `voltage` REAL NOT NULL,
   `current` REAL NOT NULL,
   `frequency` INT NOT NULL,
   `active_power` REAL NOT NULL,
   `power_factor` REAL NOT NULL,
   `time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` INT NOT NULL,
-  PRIMARY KEY (`em_id`)
+  `status` INT NOT NULL
 ) ENGINE = InnoDB;
 
--- Tạo bảng Registration AC
-CREATE TABLE `schema_server`.`registration_ac` (
-  `room_id` INT NOT NULL,
-  `ac_id` INT NOT NULL,
-  CONSTRAINT `fk_registration_ac_room`
-    FOREIGN KEY (`room_id`)
-    REFERENCES `room`(`room_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT,
-  CONSTRAINT `fk_registration_ac_ac`
-    FOREIGN KEY (`ac_id`)
-    REFERENCES `air_conditioner`(`ac_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT
-) ENGINE = InnoDB;
-
--- Tạo bảng Registration Fan
-CREATE TABLE `schema_server`.`registration_fan` (
-  `room_id` INT NOT NULL,
-  `fan_id` INT NOT NULL,
-  CONSTRAINT `fk_registration_fan_room`
-    FOREIGN KEY (`room_id`)
-    REFERENCES `room`(`room_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT,
-  CONSTRAINT `fk_registration_fan_fan`
-    FOREIGN KEY (`fan_id`)
-    REFERENCES `fan`(`fan_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT
-) ENGINE = InnoDB;
-
--- Tạo bảng Registration EM
-CREATE TABLE `schema_server`.`registration_em` (
-  `room_id` INT NOT NULL,
-  `em_id` INT NOT NULL,
-  CONSTRAINT `fk_registration_em_room`
-    FOREIGN KEY (`room_id`)
-    REFERENCES `room`(`room_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT,
-  CONSTRAINT `fk_registration_em_em`
-    FOREIGN KEY (`em_id`)
-    REFERENCES `energy_measure`(`em_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT
-) ENGINE = InnoDB;
-
--- Tạo bảng Registration Sensor
-CREATE TABLE `schema_server`.`registration_sensor` (
-  `room_id` INT NOT NULL,
-  `sensor_id` INT NOT NULL,
-  CONSTRAINT `fk_registration_sensor_room`
-    FOREIGN KEY (`room_id`)
-    REFERENCES `room`(`room_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT,
-  CONSTRAINT `fk_registration_sensor_sensor`
-    FOREIGN KEY (`sensor_id`)
-    REFERENCES `sensor_node`(`sensor_id`)
-    ON DELETE RESTRICT
-    ON UPDATE RESTRICT
-) ENGINE = InnoDB;
-
-CREATE TABLE `schema_server`.`user` (`user_id` INT NOT NULL AUTO_INCREMENT , `name` VARCHAR(255) NULL , `username` TEXT NOT NULL , `password` TEXT NOT NULL , `status` INT NOT NULL , PRIMARY KEY (`user_id`)) ENGINE = InnoDB;
+CREATE TABLE `schema_server`.`user` (
+`user_id` INT NOT NULL AUTO_INCREMENT ,
+`name` VARCHAR(255) NULL ,
+`username` TEXT NOT NULL ,
+`password` TEXT NOT NULL ,
+`status` INT NOT NULL ,
+PRIMARY KEY (`user_id`)) ENGINE = InnoDB;
