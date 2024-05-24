@@ -1,12 +1,12 @@
+from datetime import datetime, timedelta
 import flask
 from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
-import flask_cors
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
 
 # Hàm để tạo kết nối MySQL
 def create_connection():
@@ -173,6 +173,50 @@ def roomGetAll():
 
     return jsonify(result), 200
 
+@app.route('/room/getById/<room_id>', methods=['GET'])
+def room_get_by_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = """
+            SELECT 
+                r.room_id, r.description, r.x_length, r.y_length,
+                b.building_id, b.name AS building_name, b.location AS building_location
+            FROM 
+                room r
+            JOIN 
+                building b ON r.building_id = b.building_id
+            WHERE r.room_id = %s
+            """
+        cursor.execute(query, (room_id,))
+        rows = cursor.fetchall()
+
+        result = []
+        for row in rows:
+            room_data = {
+                "building_info": {
+                    "building_id": row["building_id"],
+                    "name": row["building_name"],
+                    "location": row["building_location"]
+                },
+                "description": row["description"],
+                "room_id": row["room_id"],
+                "x_length": row["x_length"],
+                "y_length": row["y_length"]
+            }
+            result.append(room_data)
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify(result), 200
+
 @app.route('/room/insert', methods=['POST'])
 def insertRoom():
     db = create_connection()
@@ -316,6 +360,22 @@ def get_all_registration_ac():
 
     return jsonify(result), 200
 
+@app.route('/registration_ac/get_room/<room_id>', methods=['GET'])
+def get_registration_ac_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_ac where room_id = %s", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/registration_ac/insert', methods=['POST'])
 def insert_registration_ac():
     db = create_connection()
@@ -324,21 +384,32 @@ def insert_registration_ac():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')  # Dữ liệu nhận từ yêu cầu POST
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
-    if room_id is None:
+    if room_id is None or x_pos is None or y_pos is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id is required"}), 400  # Yêu cầu không hợp lệ
+        return jsonify({"error": "room_id, x_pos, and y_pos are required"}), 400  # Yêu cầu không hợp lệ
 
-    cursor.execute("INSERT INTO registration_ac (room_id) VALUES (%s)", (room_id,))
-    db.commit()
+    try:
+        cursor.execute(
+            "INSERT INTO registration_ac (room_id, x_pos, y_pos) VALUES (%s, %s, %s)",
+            (room_id, x_pos, y_pos)
+        )
+        db.commit()
+    except mysql.connector.Error as err:
+        db.rollback()
+        cursor.close()
+        db.close()
+        return jsonify({"error": str(err)}), 500  # Lỗi khi thực thi truy vấn
 
     cursor.close()
     db.close()
 
     return jsonify({"message": "Registration AC added successfully"}), 201
 
-@app.route('/registration_ac/update/<int:room_id>/<int:ac_id>', methods=['PUT'])
+@app.route('/registration_ac/update/<room_id>/<ac_id>', methods=['PUT'])
 def update_registration_ac(room_id, ac_id):
     db = create_connection()
     if db is None:
@@ -347,19 +418,19 @@ def update_registration_ac(room_id, ac_id):
     cursor = db.cursor()
 
     # Lấy dữ liệu đầu vào từ yêu cầu PUT
-    new_room_id = request.json.get('new_room_id')
-    new_ac_id = request.json.get('new_ac_id')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
     update_values = []
     query_parts = []
 
-    if new_room_id:
-        query_parts.append("room_id = %s")
-        update_values.append(new_room_id)
+    if x_pos:
+        query_parts.append("x_pos = %s")
+        update_values.append(x_pos)
 
-    if new_ac_id:
-        query_parts.append("ac_id = %s")
-        update_values.append(new_ac_id)
+    if y_pos:
+        query_parts.append("y_pos = %s")
+        update_values.append(y_pos)
 
     if not query_parts:
         cursor.close()
@@ -426,6 +497,22 @@ def acGetAll():
 
     return jsonify(result), 200
 
+@app.route('/air_conditioner/getById/<ac_id>', methods=['GET'])
+def ac_get_by_id(ac_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM air_conditioner where ac_id = %s", (ac_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/air_conditioner/insert', methods=['POST'])
 def insertAC():
     db = create_connection()
@@ -464,6 +551,22 @@ def get_all_fans():
 
     cursor = db.cursor()
     cursor.execute("SELECT * FROM fan")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
+@app.route('/fan/getById/<fan_id>', methods=['GET'])
+def get_fan_by_id(fan_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM fan where fan_id = %s", (fan_id,))
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -513,6 +616,22 @@ def get_all_registration_fan():
 
     return jsonify(result), 200
 
+@app.route('/registration_fan/getByRoomId/<room_id>', methods=['GET'])
+def get_registration_fan_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_fan where room_id = %s", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/registration_fan/insert', methods=['POST'])
 def insert_registration_fan():
     db = create_connection()
@@ -521,11 +640,15 @@ def insert_registration_fan():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
-    if room_id is None:
-        return jsonify({"error": "room_id and fan_id are required"}), 400
+    if room_id is None or x_pos is None or y_pos is None:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "room_id, x_pos, and y_pos are required"}), 400  # Yêu cầu không hợp lệ
 
-    cursor.execute("INSERT INTO registration_fan (room_id) VALUES (%s)", (room_id,))
+    cursor.execute("INSERT INTO registration_fan (room_id, x_pos, y_pos) VALUES (%s, %s, %s)", (room_id, x_pos, y_pos))
     db.commit()
 
     cursor.close()
@@ -537,27 +660,31 @@ def insert_registration_fan():
 def update_registration_fan(room_id, fan_id):
     db = create_connection()
     if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
 
     cursor = db.cursor()
 
-    new_room_id = request.json.get('new_room_id')
-    new_fan_id = request.json.get('new_fan_id')
+    # Lấy dữ liệu đầu vào từ yêu cầu PUT
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
     update_values = []
     query_parts = []
 
-    if new_room_id:
-        query_parts.append("room_id = %s")
-        update_values.append(new_room_id)
+    if x_pos:
+        query_parts.append("x_pos = %s")
+        update_values.append(x_pos)
 
-    if new_fan_id:
-        query_parts.append("fan_id = %s")
-        update_values.append(new_fan_id)
+    if y_pos:
+        query_parts.append("y_pos = %s")
+        update_values.append(y_pos)
 
     if not query_parts:
-        return jsonify({"error": "No fields to update"}), 400
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
 
+    # Cập nhật dựa trên room_id và ac_id hiện tại
     query = f"UPDATE registration_fan SET {', '.join(query_parts)} WHERE room_id = %s AND fan_id = %s"
     update_values.extend([room_id, fan_id])
 
@@ -568,13 +695,13 @@ def update_registration_fan(room_id, fan_id):
         cursor.close()
         db.close()
 
-        return jsonify({"message": "Registration Fan updated successfully"}), 200
+        return jsonify({"message": "Registration fan updated successfully"}), 200  # 200 (OK)
 
     except Error as e:
-        print("Error during update:", e)
+        print("Error during update:", e)  # Ghi lại lỗi
         cursor.close()
         db.close()
-        return jsonify({"error": "Failed to update registration fan"}), 500
+        return jsonify({"error": "Failed to update Registration fan"}), 500
 
 @app.route('/registration_fan/delete/<room_id>/<fan_id>', methods=['DELETE'])
 def delete_registration_fan(room_id, fan_id):
@@ -623,6 +750,39 @@ def get_all_energy_measure():
 
     return jsonify(result), 200  # Trả lại mã trạng thái 200 (OK)
 
+@app.route('/energy_measure/getById/<em_id>/', defaults={'time_range': None}, methods=['GET'])
+@app.route('/energy_measure/getById/<em_id>/<time_range>', methods=['GET'])
+def get_em_by_id(em_id, time_range):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+    query = "SELECT * FROM energy_measure WHERE em_id = %s"
+    params = [em_id]
+
+    if time_range is not None and time_range in [0, 1, 2]:
+        if time_range == 0:
+            time_threshold = datetime.now() - timedelta(hours=24)
+        elif time_range == 1:
+            time_threshold = datetime.now() - timedelta(days=7)
+        elif time_range == 2:
+            time_threshold = datetime.now() - timedelta(days=30)
+
+        # Thêm điều kiện thời gian vào truy vấn
+        query += " AND time >= %s"
+        params.append(time_threshold.strftime('%Y-%m-%d %H:%M:%S'))
+
+    cursor.execute(query, tuple(params))
+
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200  # 200 (OK)
+
 @app.route('/energy_measure/insert', methods=['POST'])
 def insert_energy_measure():
     db = create_connection()
@@ -670,6 +830,22 @@ def get_all_registration_em():
 
     return jsonify(result), 200
 
+@app.route('/registration_em/getByRoomId/<room_id>', methods=['GET'])
+def get_registration_em_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_em where room_id = %s", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/registration_em/insert', methods=['POST'])
 def insert_registration_em():
     db = create_connection()
@@ -678,17 +854,21 @@ def insert_registration_em():
 
     cursor = db.cursor()
     room_id = request.json.get('room_id')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
-    if room_id is None:
-        return jsonify({"error": "room_id and em_id are required"}), 400
+    if room_id is None or x_pos is None or y_pos is None:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "room_id, x_pos, and y_pos are required"}), 400  # Yêu cầu không hợp lệ
 
-    cursor.execute("INSERT INTO registration_em (room_id) VALUES (%s)", (room_id,))
+    cursor.execute("INSERT INTO registration_em (room_id, x_pos, y_pos) VALUES (%s, %s, %s)", (room_id, x_pos, y_pos))
     db.commit()
 
     cursor.close()
     db.close()
 
-    return jsonify({"message": "Registration EM added successfully"}), 201  # 201 (Created)
+    return jsonify({"message": "Registration Em added successfully"}), 201  # 201 (Created)
 
 @app.route('/registration_em/delete/<room_id>/<em_id>', methods=['DELETE'])
 def delete_registration_em(room_id, em_id):
@@ -729,6 +909,40 @@ def get_all_sensor_nodes():
 
     cursor = db.cursor()
     cursor.execute("SELECT * FROM sensor_node")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200  # 200 (OK)
+
+@app.route('/sensor_node/getById/<sensor_id>/', defaults={'time_range': None}, methods=['GET'])
+@app.route('/sensor_node/getById/<sensor_id>/<time_range>', methods=['GET'])
+def get_sensor_nodes_by_id(sensor_id, time_range):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+
+    query = "SELECT * FROM sensor_node WHERE sensor_id = %s"
+    params = [sensor_id]
+
+    if time_range is not None:
+        if time_range == 0:
+            time_threshold = datetime.now() - timedelta(hours=24)
+        elif time_range == 1:
+            time_threshold = datetime.now() - timedelta(days=7)
+        elif time_range == 2:
+            time_threshold = datetime.now() - timedelta(days=30)
+
+        # Thêm điều kiện thời gian vào truy vấn
+        query += " AND time >= %s"
+        params.append(time_threshold.strftime('%Y-%m-%d %H:%M:%S'))
+
+    cursor.execute(query, tuple(params))
+
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -780,6 +994,22 @@ def get_all_registration_sensor():
 
     return jsonify(result), 200
 
+@app.route('/registration_sensor/getByRoomId/<room_id>', methods=['GET'])
+def get_registration_sensor_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_sensor where room_id = %s", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/registration_sensor/insert', methods=['POST'])
 def insert_registration_sensor():
     db = create_connection()
@@ -787,21 +1017,69 @@ def insert_registration_sensor():
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
-    room_id = request.json.get('room_id')  # Dữ liệu từ yêu cầu POST
+    room_id = request.json.get('room_id')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
 
-    if room_id is None:
+    if room_id is None or x_pos is None or y_pos is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id and sensor_id are required"}), 400  # Thiếu tham số
+        return jsonify({"error": "room_id, x_pos, and y_pos are required"}), 400  # Yêu cầu không hợp lệ
 
-    query = "INSERT INTO registration_sensor (room_id) VALUES (%s)"
-    cursor.execute(query, (room_id,))
+    cursor.execute("INSERT INTO registration_sensor (room_id, x_pos, y_pos) VALUES (%s, %s, %s)", (room_id, x_pos, y_pos))
     db.commit()
 
     cursor.close()
     db.close()
 
-    return jsonify({"message": "Registration sensor added successfully"}), 201  # 201 (Created)
+    return jsonify({"message": "Registration sensor node added successfully"}), 201  # 201 (Created)
+
+@app.route('/registration_sensor/update/<room_id>/<sensor_id>', methods=['PUT'])
+def update_registration_sensor(room_id, sensor_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    # Lấy dữ liệu đầu vào từ yêu cầu PUT
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
+
+    update_values = []
+    query_parts = []
+
+    if x_pos:
+        query_parts.append("x_pos = %s")
+        update_values.append(x_pos)
+
+    if y_pos:
+        query_parts.append("y_pos = %s")
+        update_values.append(y_pos)
+
+    if not query_parts:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
+
+    # Cập nhật dựa trên room_id và ac_id hiện tại
+    query = f"UPDATE registration_sensor SET {', '.join(query_parts)} WHERE room_id = %s AND sensor_id = %s"
+    update_values.extend([room_id, sensor_id])
+
+    try:
+        cursor.execute(query, tuple(update_values))
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        return jsonify({"message": "Registration sensor updated successfully"}), 200  # 200 (OK)
+
+    except Error as e:
+        print("Error during update:", e)  # Ghi lại lỗi
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Failed to update Registration sensor"}), 500
 
 @app.route('/registration_sensor/delete/<room_id>/<sensor_id>', methods=['DELETE'])
 def delete_registration_sensor(room_id, sensor_id):

@@ -112,3 +112,19 @@ CREATE TABLE `schema_server`.`user` (
 `password` TEXT NOT NULL ,
 `status` INT NOT NULL ,
 PRIMARY KEY (`user_id`)) ENGINE = InnoDB;
+
+ALTER TABLE `registration_ac`
+ADD `x_pos` REAL NOT NULL AFTER `ac_id`,
+ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
+
+ALTER TABLE `registration_em`
+ADD `x_pos` REAL NOT NULL AFTER `em_id`,
+ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
+
+ALTER TABLE `registration_fan`
+ADD `x_pos` REAL NOT NULL AFTER `fan_id`,
+ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
+
+ALTER TABLE `registration_sensor`
+ADD `x_pos` REAL NOT NULL AFTER `sensor_id`,
+ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
