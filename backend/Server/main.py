@@ -3,7 +3,7 @@ import flask
 from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
-from flask_cors import CORS
+# from flask_cors import CORS
 
 app = Flask(__name__)
 # CORS(app)
@@ -750,14 +750,14 @@ def get_all_energy_measure():
 
     return jsonify(result), 200  # Trả lại mã trạng thái 200 (OK)
 
-@app.route('/energy_measure/getById/<em_id>/', defaults={'time_range': None}, methods=['GET'])
-@app.route('/energy_measure/getById/<em_id>/<time_range>', methods=['GET'])
+@app.route('/energy_measure/getById/<int:em_id>/', defaults={'time_range': None}, methods=['GET'])
+@app.route('/energy_measure/getById/<int:em_id>/<int:time_range>', methods=['GET'])
 def get_em_by_id(em_id, time_range):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
 
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     query = "SELECT * FROM energy_measure WHERE em_id = %s"
     params = [em_id]
 
@@ -773,13 +773,15 @@ def get_em_by_id(em_id, time_range):
         query += " AND time >= %s"
         params.append(time_threshold.strftime('%Y-%m-%d %H:%M:%S'))
 
-    cursor.execute(query, tuple(params))
-
-    key = [desc[0] for desc in cursor.description]
-    result = [dict(zip(key, row)) for row in cursor.fetchall()]
-
-    cursor.close()
-    db.close()
+    try:
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        result = [row for row in rows]
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
 
     return jsonify(result), 200  # 200 (OK)
 
@@ -917,14 +919,14 @@ def get_all_sensor_nodes():
 
     return jsonify(result), 200  # 200 (OK)
 
-@app.route('/sensor_node/getById/<sensor_id>/', defaults={'time_range': None}, methods=['GET'])
-@app.route('/sensor_node/getById/<sensor_id>/<time_range>', methods=['GET'])
+@app.route('/sensor_node/getById/<int:sensor_id>/', defaults={'time_range': None}, methods=['GET'])
+@app.route('/sensor_node/getById/<int:sensor_id>/<int:time_range>', methods=['GET'])
 def get_sensor_nodes_by_id(sensor_id, time_range):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500
 
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
 
     query = "SELECT * FROM sensor_node WHERE sensor_id = %s"
     params = [sensor_id]
@@ -936,18 +938,23 @@ def get_sensor_nodes_by_id(sensor_id, time_range):
             time_threshold = datetime.now() - timedelta(days=7)
         elif time_range == 2:
             time_threshold = datetime.now() - timedelta(days=30)
+        else:
+            time_threshold = None
 
-        # Thêm điều kiện thời gian vào truy vấn
-        query += " AND time >= %s"
-        params.append(time_threshold.strftime('%Y-%m-%d %H:%M:%S'))
+        if time_threshold:
+            # Thêm điều kiện thời gian vào truy vấn
+            query += " AND time >= %s"
+            params.append(time_threshold.strftime('%Y-%m-%d %H:%M:%S'))
 
-    cursor.execute(query, tuple(params))
-
-    key = [desc[0] for desc in cursor.description]
-    result = [dict(zip(key, row)) for row in cursor.fetchall()]
-
-    cursor.close()
-    db.close()
+    try:
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        result = [row for row in rows]
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
 
     return jsonify(result), 200  # 200 (OK)
 
