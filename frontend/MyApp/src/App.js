@@ -22,7 +22,7 @@ export const host = process.env.REACT_APP_BACKEND_URL;
 
 export const  UserContext = createContext();
 function App() {
-    const [isSignIn, setIsSignin] = useState(debug_mode);		//set true for debungging
+    const [isSignIn, setIsSignin] = useState(true);		//set true for debungging
     const [signUp, setSignUp] = useState(false);
     const [theme, colorMode] = useMode();
 
@@ -50,8 +50,8 @@ function App() {
                             <Route path="/landing/dashboard" element={<Dashboard/>} />
                             <Route path="/landing" element={<Landing />} />
                             {
-                                localStorage.getItem("is_superuser").toString() === "1"
-                                &&
+                                // localStorage.getItem("is_superuser").toString() === "1"
+                                // &&
                                 <Route path="/configuration" element={<Configuration />} />
                             }
                             <Route path="/weatherdata" element={<Weatherdata/>} />

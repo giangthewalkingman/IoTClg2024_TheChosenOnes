@@ -1,16 +1,16 @@
 root url api: localhost:5000/...
 CHức năng giám sát dữ liệu (du lieu xep theo thu tu thoi gian)
 - sensor: 
-/sensor_node/realtime?node_id={node_id}: lay du lieu moi nhat cua node_id
-VD: localhost:5000/sensor_node/realtime?node_id=1
+/sensor_node/realtime?room_id={room_id}: lay du lieu moi nhat cua tất cả node_id
+VD: localhost:5000/sensor_node/realtime?room_id=1
 /sensor_node/getall?node_id={node_id}&filter={time_range}: lay du lieu trong khoang thoi gian:
 time_range = 0: 24h gan nhat
 time_range = 1: 1 tuan gan nhat
 time_range = 2: 1 thang gan nhat
 time_range = 3: 2 thang gan nhat 
 - energy measure:
-/energy_measure/realtime?em_id={em_id}: lay du lieu moi nhat cua em_id
-/energy_measure/power?em_id={em_id}&filter={time_range}: lay du lieu trong khoang thoi gian:
+/energy_measure/realtime: lấy dữ liệu năng lượng mới nhất
+/energy_measure/power?filter={time_range}: lay du lieu active_power trong khoang thoi gian:
 time_range = 0: 24h gan nhat
 time_range = 1: 1 tuan gan nhat
 time_range = 2: 1 thang gan nhat
@@ -20,7 +20,7 @@ time_range = 3: 2 thang gan nhat
 - fan:
 /fan/getall?fan_id={fan_id}: lay du lieu moi nhat cua fan_id
 - thông tin building, room:
-/building/getall:
+/building/getall (giữ nguyên)
 /room/getall: lấy dữ liệu phòng có format như sau:
 [
     {
@@ -36,7 +36,78 @@ time_range = 3: 2 thang gan nhat
     }
 ]
 trong đó, building_info là dữ liệu của building_id trong bảng Building
-
+- thông tin gateway:
+/gateway/getall: lấy dữ liệu các gateway
+[
+{gateway_id, connected, room_id}
+]
+mặc định room_id = 0, gateway_id là pk
+- localweather: /localweather
+/localweather/get: fe yêu cầu dữ liệu từ server (lấy dữ liệu mới nhất trong database)
+/localweather/insert: server lấy dữ liệu từ url aqicn và lưu vào database mỗi 30 phút
+url của aqicn: https://api2.waqi.info/api/feed/@1583/aqi.json
+lấy dữ liệu từ api của apicn và sắp xếp theo format sau:
+{
+   'temp': ...,
+   'humid': ...,
+   'wind': ...,
+   'aqi': ...,
+   'time': ...,
+}
+trong đó
+temp lấy từ rxs->obs->0->msg->iaqi->t->v
+humid: rxs->obs->0->msg->iaqi->h->v
+wind: rxs->obs->0->msg->iaqi->w->v
+aqi: rxs->obs->0->msg->aqi
+time: rxs->obs->0->msg->time->s
+- pmv:
+/pmv/insert:
+/pmv/env?room_id={room_id}: lấy giá trị met và clo mới nhất
+{
+'met': ..,
+'clo': ..,
+}
+/pmv/getfull?room_id={room_id}&gateway_id={gateway_id}: lấy tất cả giá trị của gateway_id trong room_id
+- heatmap:
+/heatmap?room_id={room_id}/sensor: lấy nhiệt độ của sensor node mới nhất cho heatmap
+{
+    'sensor': [
+        {
+            'sensor_id': ...,
+            'temp': ...,
+            'x_axis': ...,
+            'y_axis': ...,
+        }, ...,
+    ],
+    'room': {
+        'x_length': ...,
+        'y_length': ...,
+    }
+}
+/heatmap?room_id={room_id}/allnode: lấy vị trí của tất cả node
+dữ liệu có format như sau:
+{
+    'sensor': [{
+        'sensor_id': ...,
+        'x_axis': ...,
+        'y_axis': ...,
+    }, ...,],
+    'energy': [{
+        'em_id': ...,
+        'x_axis': ...,
+        'y_axis': ...,
+    }, ...,],
+    'fan': [{
+        'fan_id': ...,
+        'x_axis': ...,
+        'y_axis': ...,
+    }, ...,],
+    'ac': [{
+        'ac_id': ...,
+        'x_axis': ...,
+        'y_axis': ...,
+    }, ...,],
+}
 chức năng thêm/xóa node:
 ông sửa mỗi bảng registration có thêm trường x_pos và y_pos nhé (2 cái này ko để NOT NULL)
 

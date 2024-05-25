@@ -11,7 +11,8 @@ import logo from '../../assets/logo_lab.png'
 import { useMode } from "../../theme";
 
 const Topbar = ({setIsSignin}) => {
-  const username = localStorage.getItem("username");
+//   const username = localStorage.getItem("username");
+  const username = 'user';
   const [isHovered, setIsHovered] = useState(false);
   const [isHovered2, setIsHovered2] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
@@ -75,8 +76,8 @@ const Topbar = ({setIsSignin}) => {
 					paddingLeft="5%"
                 >
                 {
-                    localStorage.getItem("is_superuser").toString() === "1" 
-                    && 
+                    // localStorage.getItem("is_superuser").toString() === "1" 
+                    // && 
 					<Link to="/configuration">
 						<IconButton 
 							onMouseEnter={() => setIsHovered2(true)}
@@ -157,10 +158,10 @@ const Topbar = ({setIsSignin}) => {
 									color: theme.palette.background.default,
 									backgroundColor: theme.palette.text.primary,
 								}}
-								onClick={()=>{
-									localStorage.clear();
-									setIsSignin(false);
-								}}
+								// onClick={()=>{
+								// 	localStorage.clear();
+								// 	setIsSignin(false);
+								// }}
 							>
 								<Typography variant="h5" p={0.3}>
 									Sign out!

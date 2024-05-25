@@ -2,8 +2,7 @@ import { Box, Button, Grid, Typography, useTheme } from "@mui/material";
 import plan_409 from "../../assets/409.svg";
 import plan_410 from "../../assets/410.svg";
 import plan_411 from "../../assets/411.svg";
-import { host } from "../../App";
-import { React, useState, useEffect, useRef } from "react";
+import { React, useState, useEffect } from "react";
 
 import HeatmapComponent from "./HeatmapComponent";
 
@@ -14,9 +13,11 @@ import HeatmapComponent from "./HeatmapComponent";
  */
 const RoomMap = ({room_id, callbackSetSignIn, backend_host}) => 
 {
-    const [nodeData, setNodeData] = useState([]);
-    const [nodeList, setNodeList] = useState([]);
-    const [nodeFunction, setNodeFunction] = useState([]);
+    const [heatMapData, setHeatMapData] = useState({'sensor' : null, 'room': null});
+    const [sensorPos, setSensorPos] = useState([]);
+    const [energyPos, setEnergyPos] = useState([]);
+    const [fanPos, setFanPos] = useState([]);
+    const [airPos, setAirPos] = useState([]);
     const [showHeatmap, setShowHeatmap] = useState(true);
     const theme = useTheme();
     
@@ -34,7 +35,8 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
      */
     const[isLoading, setIsLoading] = useState(false);
     // const api_to_fetch = `http://${backend_host}/api/room/information_tag?room_id=${room_id}`;
-    const api_to_fetch = `http://${backend_host}/api/heatmap?room_id=${room_id}`;
+    const heatmap_data_url = `http://${backend_host}/heatmap?room_id=${room_id}/sensor`;
+    const node_position_url = `http://${backend_host}/heatmap?room_id=${room_id}/allnode`;
 
     const dict_plan = {
         1: plan_409,
@@ -42,177 +44,165 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
         3: plan_409,
         4: plan_411,
     }
-    // const pic_resolution = {
-    //     1: [321,351],
-    //     2: [321,351],
-    //     3: [321,351],
-    //     4: [322,352],
-    // }
 
-    const fetch_data_function = async (url, access_token) =>
+    const get_heatmap_data = async (heatmap_url, node_url) =>
     {
-        const headers = 
-        {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${access_token}`,
+        try {
+        // const heatmap_data_response = await fetch(heatmap_url);
+        // const node_position_response = await fetch(node_url);
+        const heatmap_data_response = {
+            'sensor': [
+                {
+                    'sensor_id': 1,
+                    'temp': 24.3,
+                    'x_axis': 10,
+                    'y_axis': 50,
+                },
+                {
+                    'sensor_id': 2,
+                    'temp': 25.3,
+                    'x_axis': 100,
+                    'y_axis': 100,
+                },
+                {
+                    'sensor_id': 3,
+                    'temp': 26.7,
+                    'x_axis': 300,
+                    'y_axis': 400,
+                },
+            ],
+            'room': {
+                'x_length': 300,
+                'y_length': 500,
+            }
         }
-        const option_fetch = 
-        {
-            "method": "GET",
-            "headers": headers,
-            "body": null,
+        const node_position_response = {
+            'sensor': [
+                {
+                    'sensor_id': 1,
+                    'x_axis': 10,
+                    'y_axis': 50,
+                },
+                {
+                    'sensor_id': 2,
+                    'x_axis': 100,
+                    'y_axis': 100,
+                },
+                {
+                    'sensor_id': 3,
+                    'x_axis': 300,
+                    'y_axis': 400,
+                },
+            ],
+            'energy': [{
+                'em_id': 1,
+                'x_axis': 0,
+                'y_axis': 0,
+            },],
+            'fan': [
+                {
+                    'fan_id': 1,
+                    'x_axis': 0,
+                    'y_axis': 500,
+                },
+                {
+                    'fan_id': 2,
+                    'x_axis': 300,
+                    'y_axis': 0,
+                },
+            ],
+            'ac': [{
+                'ac_id': 1,
+                'x_axis': 0,
+                'y_axis': 250,
+            },],
         }
-
-        let response;
-        try
-        {
-            response = await fetch(url, option_fetch);
-        }
-        catch(err)
-        {
-            console.log("Error happend while getting data. Error: " + err);
-        }
-        if(response && response.status === 200)
-        {   
-            const data_response = await response.json();
-            let newNodePosition = [];
-            setNodeList(data_response[1]);
-            setNodeFunction(data_response[2]);
-            for (let i = 0; i < data_response[3].length; i++) {
-                const newObj = {
-                    x: Math.round(data_response[3][i] * 321.0 / data_response[0][0]),
-                    y: Math.round(data_response[4][i] * 351.0 / data_response[0][1]),
-                    value: Math.round(data_response[5][i]),
+        // if ((heatmap_data_response.status === 200) & (node_position_response.status === 200)) {   
+        if (1) {   
+        //   const heatmap_data_json = await heatmap_data_response.json();
+        //   const node_position_json = await node_position_response.json();
+        const heatmap_data_json = heatmap_data_response;
+        const node_position_json = node_position_response;
+          if (heatmap_data_json && node_position_json) {
+            let x_length = heatmap_data_json.room.x_length;
+            let y_length = heatmap_data_json.room.y_length;
+            let heatmap_data = [];
+            let sensor_pos = [];
+            let energy_pos = [];
+            let fan_pos = [];
+            let ac_pos = [];
+            for (let item of heatmap_data_json.sensor) {
+                let newObj = {
+                    x: Math.floor(item.x_axis * 321.0 / x_length),
+                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    value: Math.round(item.temp),
                     radius: 350,
-                };
-                newNodePosition.push(newObj);
+                }
+                heatmap_data.push(newObj);
             }
-            setNodeData(newNodePosition);
+            for (let item of node_position_json.sensor) {
+                let newObj = {
+                    id: item.sensor_id,
+                    x: Math.floor(item.x_axis * 321.0 / x_length),
+                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                }
+                sensor_pos.push(newObj);
+            }
+            for (let item of node_position_json.energy) {
+                let newObj = {
+                    id: item.em_id,
+                    x: Math.floor(item.x_axis * 321.0 / x_length),
+                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                }
+                energy_pos.push(newObj);
+            }
+            for (let item of node_position_json.fan) {
+                let newObj = {
+                    id: item.fan_id,
+                    x: Math.floor(item.x_axis * 321.0 / x_length),
+                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                }
+                fan_pos.push(newObj);
+            }
+            for (let item of node_position_json.ac) {
+                let newObj = {
+                    id: item.ac_id,
+                    x: Math.floor(item.x_axis * 321.0 / x_length),
+                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                }
+                ac_pos.push(newObj);
+            }
+            setHeatMapData(heatmap_data);   
+            setSensorPos(sensor_pos);
+            setEnergyPos(energy_pos);
+            setFanPos(fan_pos);
+            setAirPos(ac_pos);
             setIsLoading(false);
-        }
-    }
-
-    const verify_and_get_data = async (fetch_data_function, callbackSetSignIn, backend_host, url) => 
-    {
-        const token = {access_token: null, refresh_token: null}
-        // const backend_host = host;
-        if(localStorage.getItem("access") !== null && localStorage.getItem("refresh") !== null)
-        {
-            token.access_token = localStorage.getItem("access"); 
-            token.refresh_token = localStorage.getItem("refresh");
-        }
-        else
-        {
-            throw new Error("There is no access token and refresh token ....");
-        }
-
-        const verifyAccessToken  = async () =>
-        {
-            //call the API to verify access-token
-            const verify_access_token_API_endpoint = `http://${backend_host}/api/token/verify`
-            const verify_access_token_API_data = 
-            {
-                "token": token.access_token,
-            }
-            const verify_access_token_API_option = 
-            {
-                "method": "POST",
-                "headers": 
-                {
-                    "Content-Type": "application/json",
-                },
-                "body": JSON.stringify(verify_access_token_API_data),
-
-            }
-            const verify_access_token_API_response = await fetch(verify_access_token_API_endpoint, 
-                                                                verify_access_token_API_option,);
-            if(verify_access_token_API_response.status !== 200)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        /*
-        *brief: this function is to verify the refresh-token and refresh the access-token if the refresh-token is still valid
-        */
-        const verifyRefreshToken  = async () =>
-        {
-            //call the API to verify access-token
-            const verify_refresh_token_API_endpoint = `http://${backend_host}/api/token/refresh`
-            const verify_refresh_token_API_data = 
-            {
-                "refresh": token.refresh_token,
-            }
-            const verify_refresh_token_API_option = 
-            {
-                "method": "POST",
-                "headers": 
-                {
-                    "Content-Type": "application/json",
-                },
-                "body": JSON.stringify(verify_refresh_token_API_data),
-
-            }
-            const verify_refresh_token_API_response = await fetch(verify_refresh_token_API_endpoint, 
-                                                                    verify_refresh_token_API_option,);
-            const verify_refresh_token_API_response_data = await verify_refresh_token_API_response.json();
-            if(verify_refresh_token_API_response.status !== 200)
-            {
-                return false;
-            }
-            else if(verify_refresh_token_API_response.status === 200 &&  verify_refresh_token_API_response_data.hasOwnProperty("access"))
-            {
-                localStorage.setItem("access", verify_refresh_token_API_response_data["access"]);
-                localStorage.setItem("refresh", verify_refresh_token_API_response_data["refresh"]);
-                return true
-            }
+          } else {
+            alert('No heatmap data!');
+          }
+        } else {
+            if (heatmap_data_response.status !== 200)
+                alert(`Cannot call to server! Error code: ${heatmap_data_response.status}`);
             else
-            {
-                throw new Error("Can not get new access token ....");
-            }
+                alert(`Cannot call to server! Error code: ${node_position_response.status}`);
         }
-
-        const  verifyAccessToken_response = await verifyAccessToken();
-
-        if(verifyAccessToken_response === true)
-        {
-            // const response = await fetch(url)
-            // const data = await response.json()
-            fetch_data_function(url, token["access_token"])
-        }
-        else
-        {
-            let verifyRefreshToken_response = null;
-            try
-            {
-                verifyRefreshToken_response = await verifyRefreshToken();
-            }
-            catch(err)
-            {
-                alert(err);
-            }
-            if(verifyRefreshToken_response === true)
-            {
-                fetch_data_function(url, token["access_token"]);
-            }
-            else
-            {
-                callbackSetSignIn(false);
-            }
-        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        alert('Failed to fetch data from server.');
+      }
     }
 
     useEffect(()=>{
-        if(nodeData === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
+        if(heatMapData.sensor === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
         {
-            verify_and_get_data(fetch_data_function, callbackSetSignIn, host, api_to_fetch);
+            get_heatmap_data(heatmap_data_url, node_position_url)
         }
         else
         {
             const timer = setTimeout(()=>{
-                    verify_and_get_data(fetch_data_function, callbackSetSignIn, host, api_to_fetch); 
-                }, 10000);
+                get_heatmap_data(heatmap_data_url, node_position_url)
+                }, 60000);
             return () => clearTimeout(timer);
         }
     },[]);
@@ -230,10 +220,12 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
                 <Grid item xs={12} p={1} />
                 <Grid container item xs={12} justifyContent='center'>
                     <HeatmapComponent
-                        nodeData={nodeData}
-                        nodeList={nodeList}
-                        nodeFunction={nodeFunction}
-                        pic_src={dict_plan[room_id]}
+                        heatMapData={heatMapData}
+                        sensorPos={sensorPos}
+                        energyPos={energyPos}
+                        fanPos={fanPos}
+                        airPos={airPos}
+                        pic_src={dict_plan[1]}
                         showHeatmap={showHeatmap}
                     />
                 </Grid>

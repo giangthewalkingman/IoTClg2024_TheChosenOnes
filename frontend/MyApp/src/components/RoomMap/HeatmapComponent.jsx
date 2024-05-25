@@ -3,9 +3,10 @@ import { styled } from '@mui/system';
 import h337 from 'heatmap.js';
 import IconButton from '@mui/material/IconButton';
 import { AddCircleOutline } from '@mui/icons-material';
-import plan_409 from "../../assets/409.svg";
 import SensorsIcon from '@mui/icons-material/Sensors';
 import AirIcon from '@mui/icons-material/Air';
+import WindPowerIcon from '@mui/icons-material/WindPower';
+import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 
 const HeatmapContainer = styled('div')({
   position: 'relative',
@@ -29,7 +30,7 @@ const HeatmapOverlay = styled('div')({
   opacity: '200%'
 });
 
-const HeatmapComponent = ({nodeData, nodeList, nodeFunction, pic_src, showHeatmap}) => {
+const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pic_src, showHeatmap}) => {
   const heatmapRef = useRef(null);
   
   const SensorButton = styled(IconButton)({
@@ -64,31 +65,66 @@ const HeatmapComponent = ({nodeData, nodeList, nodeFunction, pic_src, showHeatma
 
     const data = {
       max: 60,
-      data: nodeData,
+      data: heatMapData,
     };
 
     heatmapInstance.setData(data);
-  }, [nodeData]);
+  }, [heatMapData]);
 
   return (
     <HeatmapContainer>
       <HeatmapImg hidden={showHeatmap ? true : false} src={pic_src} alt="Map view" />
       <HeatmapOverlay hidden={showHeatmap ? false : true} ref={heatmapRef} />
-      {nodeData.map((sensor, index) => (
+      {sensorPos.map((sensor, index) => (
           <SensorButton
             size='large'
             key={index}
             variant="contained"
             color="primary"
-            style={{ top: sensor.y - 25, left: sensor.x - 25, backgroundColor: (nodeFunction[index] === 'sensor' ? 'white' : 'aqua') }} 
+            style={{ top: sensor.y - 25, left: sensor.x - 25, backgroundColor: 'white' }} 
             startIcon={<AddCircleOutline />}
           >
-            {nodeFunction[index] === 'sensor' ?
             <SensorsIcon fontSize='inherit' />
-            :
+            <span className="sensor-label">{sensorPos[index].id}</span>
+          </SensorButton>
+      ))}
+      {energyPos.map((sensor, index) => (
+          <SensorButton
+            size='large'
+            key={index}
+            variant="contained"
+            color="primary"
+            style={{ top: sensor.y - 25, left: sensor.x - 25, backgroundColor: 'chartreuse' }} 
+            startIcon={<AddCircleOutline />}
+          >
+            <ElectricBoltIcon fontSize='inherit' />
+            <span className="sensor-label">{energyPos[index].id}</span>
+          </SensorButton>
+      ))}
+      {fanPos.map((sensor, index) => (
+          <SensorButton
+            size='large'
+            key={index}
+            variant="contained"
+            color="primary"
+            style={{ top: sensor.y - 25, left: sensor.x - 25, backgroundColor: 'aqua' }} 
+            startIcon={<AddCircleOutline />}
+          >
+            <WindPowerIcon fontSize='inherit' />
+            <span className="sensor-label">{fanPos[index].id}</span>
+          </SensorButton>
+      ))}
+      {airPos.map((sensor, index) => (
+          <SensorButton
+            size='large'
+            key={index}
+            variant="contained"
+            color="primary"
+            style={{ top: sensor.y - 25, left: sensor.x - 25, backgroundColor: 'orange' }} 
+            startIcon={<AddCircleOutline />}
+          >
             <AirIcon fontSize='inherit' />
-            }
-            <span className="sensor-label">{nodeList[index]}</span>
+            <span className="sensor-label">{airPos[index].id}</span>
           </SensorButton>
       ))}
       

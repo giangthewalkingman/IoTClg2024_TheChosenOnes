@@ -8,311 +8,316 @@ import {
     Stack,
     SvgIcon,
     Typography,
-    useTheme, Tooltip
+    useTheme, Tooltip,
+    Button
   } from '@mui/material';
-import { tokens } from "../theme";
-import Header from "./Header";
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
 import {host} from "../App"
 import { React, useEffect, useState } from "react";
-import temp_icon from "../assets/temperature.svg";
-import hum_icon from "../assets/humidity.svg";
-import co2_icon from "../assets/co2.svg";
-import tvoc_icon from "../assets/tvoc.svg";
-import dust_icon from "../assets/dust.svg";
-import sound_icon from "../assets/sound.svg";
-import light_icon from "../assets/light.svg";
-import motion_icon from "../assets/motion.svg";
 import ThermostatIcon from '@mui/icons-material/Thermostat';
-import Co2Icon from '@mui/icons-material/Co2';
 import InvertColorsIcon from '@mui/icons-material/InvertColors';
 import FilterDramaIcon from '@mui/icons-material/FilterDrama';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import BoyIcon from '@mui/icons-material/Boy';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import LensBlurIcon from '@mui/icons-material/LensBlur';
-import AQI from './AQI';
-import { Boy, VolumeMute } from '@mui/icons-material';
+import AccessibilityIcon from '@mui/icons-material/Accessibility';
+import WavesIcon from '@mui/icons-material/Waves';
 
 const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuatorInfoOfRoom}) => {
-    const backend_host = host;
-    const api_informationtag = url;
     const theme = useTheme();
+
+    const sensor_data_url = `http://${host}/sensor_node/realtime?room_id=${room_id}`;
+    const pmv_data_url = `http://${host}/pmv/env?room_id=${room_id}`
     
+    const [nodeID, setNodeID] = useState(null);
+    const [nodeIDlist, setNodeIDlist] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [infoData, getInfoData] = useState(null);
-    const [nodeData, getNodeData] = useState(null);
-    const [aqiInfo, setAQIInfo] = useState([]);
+    const [pmvData, getPmvData] = useState(null);
 
-    const iconMap = {
-        temp: (
-            <img height="70px" width="70px"  src={temp_icon} />
-        ),
-        hum: (
-            <img height="70px" width="70px"  src={hum_icon} />
-        ),
-        co2: (
-            <img height="70px" width="70px"  src={co2_icon} />
-        ),
-        tvoc: (
-            <img height="70px" width="70px"  src={tvoc_icon} />
-        ),
-        dust: (
-            <img height="70px" width="70px"  src={dust_icon} />
-        ),
-        light: (
-            <img height="70px" width="70px"  src={light_icon} />
-        ),
-        sound: (
-            <img height="70px" width="70px"  src={sound_icon} />
-        ),
-        motion: (
-            <img height="70px" width="70px"  src={motion_icon} />
-        ),
-      };
-    const dict_of_enviroment_para_names = 
-    {
-        "temp": {"name":" Temparature", "icon":iconMap["temp"], "unit":"°C"}, 
-        "hum": {"name":"Humidity", "icon":iconMap["hum"], "unit":"%"}, 
-        "co2": {"name":"Co2", "icon":iconMap["co2"], "unit":"ppm"}, 
-        "tvoc": {"name":"TVOC","icon":iconMap["tvoc"], "unit":"µg/m3"},
-        "dust": {"name": "Dust", "icon":iconMap["dust"], "unit": "µm"},
-        "sound": {"name": "Sound", "icon":iconMap["sound"], "unit": "dB"},
-        "light": {"name": "Light", "icon":iconMap["light"], "unit": "lux"},
-        "motion": {"name": "Motion Detection", "icon":iconMap["motion"], "unit": ""},
+    const handleChange = (event) => {
+        setNodeID(event.target.value);
+    }
+
+    const rating_index = {
+        1 : {"level": "Good" , "colour": "green"},
+        2 : {"level": "Moderate", "colour": "yellow"},
+        3 : {"level": "Poor", "colour": "orange"},
+        4 : {"level": "Unhealthy", "colour": "red"},
+        5 : {"level": "Very Unhealthy", "colour": "purple"},
+        6 : {"level": "Hazardous", "colour": "maroon"},
     };
 
-    const get_information_data = async (url, access_token) => 
+    const define_sensor_data = 
     {
-        const headers = 
-        {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${access_token}`,
-        }
-        const option_fetch = 
-        {
-            "method": "GET",
-            "headers": headers,
-            "body": null,
-        }
-        const response = await fetch(url, option_fetch)
-        const data = await response.json()
-        if(data)
-        {
-            // if(response.status === 200)
-            // {
-            //     getCo2(data.co2)
-            //     getHum(data.hum)
-            //     getTemp(data.temp)
-            //     getTime(data.time)
-            // }
-            let newInfoData = {
-                    "temp": null, 
-                    "hum": null, 
-                    "co2": null, 
-                    "tvoc": null,
-                    "dust": null,
-                    "sound": null,
-                    "light": null,
-                    "motion": null,
+        "temp": {"name":" Temparature", "unit":"°C"},
+        'wind': {"name":" Air speed", "unit":"m/s"},
+        "humid": {"name":"Humidity", "unit":"%"}, 
+        "pm25": {"name": "AQI", "unit": ""},
+    };
+
+    const aqi_conversion_table = [
+        {'aqi_min': 0,'aqi_max': 50,'pm25_min': 0,'pm25_max': 12,},
+        {'aqi_min': 51,'aqi_max': 100,'pm25_min': 12.1,'pm25_max': 35.4,},
+        {'aqi_min': 101,'aqi_max': 150,'pm25_min': 35.5,'pm25_max': 55.4,},
+        {'aqi_min': 151,'aqi_max': 200,'pm25_min': 55.5,'pm25_max': 150.4,},
+        {'aqi_min': 201,'aqi_max': 300,'pm25_min': 150.5,'pm25_max': 250.4,},
+        {'aqi_min': 300,'aqi_max': 500,'pm25_min': 250.5,'pm25_max': 500.4,},
+    ]
+
+    function convertPM25toAQI(pm25) {
+        for (let range of aqi_conversion_table) {
+            if (pm25 >= range.pm25_min && pm25 <= range.pm25_max) {
+                let aqi = Math.floor(range.aqi_min + (pm25 - range.pm25_min) * (range.aqi_max - range.aqi_min) / (range.pm25_max - range.pm25_min));
+                return aqi;
             }
-            
-            const array_of_keys_in_dict_of_enviroment_para_names = Object.keys(dict_of_enviroment_para_names);
-            array_of_keys_in_dict_of_enviroment_para_names.forEach((each_key) => {
-                    if (data.hasOwnProperty(each_key) && each_key === "motion") 
-                    // if (data.hasOwnProperty(each_key) && data[each_key][data[each_key].length-1] !== 0) 
-                    {
-                        if(data[each_key][data[each_key].length-1] > 0)
-                        {
-                            const motion_data = (data[each_key][data[each_key].length-1] == 1 ? "Yes" : "No");    //!< data[each_key][data[each_key].length-1] (last element of array)
-                            newInfoData[each_key] = { 
-                                "title": dict_of_enviroment_para_names[each_key]["name"], 
-                                "icon": dict_of_enviroment_para_names[each_key]["icon"], 
-                                "value": motion_data,
-                                "unit": dict_of_enviroment_para_names[each_key]["unit"],
-                            }; 
-                        }
-                        else
-                        {
-                            newInfoData[each_key] = {
-                                "title": dict_of_enviroment_para_names[each_key]["name"], 
-                                "icon": dict_of_enviroment_para_names[each_key]["icon"], 
-                                "value": "No data",    //last element of array data
-                                "unit": "",
-                            }; 
-                        }
-                    }
-                    else if (data.hasOwnProperty(each_key) && each_key !== "motion")
-                    // if (data.hasOwnProperty(each_key) && data[each_key][data[each_key].length-1] !== 0) 
-                    {
-                        if(data[each_key][data[each_key].length-1] > -1)
-                        {
-
-                            newInfoData[each_key] = {
-                                "title": dict_of_enviroment_para_names[each_key]["name"], 
-                                "icon": dict_of_enviroment_para_names[each_key]["icon"], 
-                                "value": data[each_key][data[each_key].length-1],    //last element of array data
-                                "unit": dict_of_enviroment_para_names[each_key]["unit"],
-                            };  
-                        }
-                        else
-                        {
-                            newInfoData[each_key] = {
-                                "title": dict_of_enviroment_para_names[each_key]["name"], 
-                                "icon": dict_of_enviroment_para_names[each_key]["icon"], 
-                                "value": "No data",    //last element of array data
-                                "unit": "",
-                            }; 
-                        }
-                    }
-                });
-
-            newInfoData["time"] = parseInt(data["time"]);
-            getInfoData(newInfoData);
-            let newNodeData = {};
-            newNodeData["sensor"] = data["node_info"]["sensor"];
-            newNodeData["actuator"] = data["node_info"]["actuator"];
-            setActuatorInfoOfRoom(newNodeData["actuator"]);
-            getNodeData(newNodeData);
-            setIsLoading(false);
         }
-        else
-        {
-            console.log("Some error happened, try to reload page!");
+        return null; // return null if out of range
+    }
+
+    const EnvData = () => {
+        for (let item of infoData) {
+            if (item.sensor_id === nodeID) {
+                return (
+                    <>
+                    <Grid container spacing={1} marginY={0.5} marginX={1} justifyContent='center'>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                            <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
+                                <Grid container item justifyContent='center' alignContent='center'>
+                                    <div style={{
+                                        width: '100px', // Adjust as needed
+                                        height: '100px', // Adjust as needed
+                                        border: '10px solid', // Border makes the circle hollow
+                                        borderColor: `${item.color}`,
+                                        borderRadius: '50%', // Makes the div a circle
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        textAlign: 'center',
+                                        position: 'relative',
+                                    }}>
+                                        <span style={{
+                                            position: 'relative',
+                                            color: theme.palette.text.primary,
+                                            fontSize: '28px',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {item.aqi}
+                                        </span>
+                                    </div>
+                                </Grid>
+                                <Grid item marginY={0.5} />
+                                <Grid item>
+                                    <Typography fontWeight='bold' variant='h3'>{item.rating}</Typography>
+                                </Grid>
+                            </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                                <Grid container display="flex" flexDirection="column" alignContent='center' alignItems='center' textAlign='center'>
+                                    <Grid item>
+                                        <ThermostatIcon style={{fontSize: '5.1rem'}}/>
+                                    </Grid>
+                                    <Grid item>
+                                        <Typography textAlign='center' variant='h5'>Temperature</Typography>
+                                        <Typography textAlign='center' fontWeight='bold' variant='h3'>
+                                        {((temp) => {
+                                            if (item.temp == 'No data') temp = item.temp;
+                                            else temp = `${item.temp} ${define_sensor_data['temp']['unit']}`
+                                            return temp;
+                                        })()}</Typography>
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                                <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
+                                    <Grid item>
+                                        <InvertColorsIcon style={{fontSize: '5.1rem'}}/>
+                                    </Grid>
+                                    <Grid item>
+                                        <Typography textAlign='center' variant='h5'>Humidity</Typography>
+                                        <Typography textAlign='center' fontWeight='bold' variant='h3'>
+                                        {((temp) => {
+                                            if (item.humid == 'No data') temp = item.humid;
+                                            else temp = `${item.humid} ${define_sensor_data['humid']['unit']}`
+                                            return temp;
+                                        })()}</Typography>
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                                <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
+                                    <Grid item>
+                                        <FilterDramaIcon style={{fontSize: '5.1rem'}}/>
+                                    </Grid>
+                                    <Grid item>
+                                        <Typography textAlign='center' variant='h5'>Air speed</Typography>
+                                        <Typography textAlign='center' fontWeight='bold' variant='h3'>
+                                        {((temp) => {
+                                            if (item.wind == 'No data') temp = item.wind;
+                                            else temp = `${item.wind} ${define_sensor_data['wind']['unit']}`
+                                            return temp;
+                                        })()}</Typography>
+                                    </Grid>
+                              </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                                <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
+                                    <Grid item>
+                                        <AccessibilityIcon style={{fontSize: '5.1rem'}}/>
+                                    </Grid>
+                                    <Grid item>
+                                        <Typography textAlign='center' variant='h5'>Metabolic rate</Typography>
+                                        <Typography textAlign='center' fontWeight='bold' variant='h3'>
+                                            {pmvData['met']}
+                                        </Typography>
+                                    </Grid>
+                              </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                                <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
+                                    <Grid item>
+                                        <WavesIcon style={{fontSize: '5.1rem'}}/>
+                                    </Grid>
+                                    <Grid item>
+                                        <Typography textAlign='center' variant='h5'>Clothing insulation</Typography>
+                                        <Typography textAlign='center' fontWeight='bold' variant='h3'>
+                                        {pmvData['clo']}
+                                        </Typography>
+                                    </Grid>
+                              </Grid>
+                            </Paper>
+                            </div>
+                        </Grid>
+                    </Grid>
+                    <Grid xs={12} textAlign='center' spacing={1} margin={1}>
+                        <Typography textAlign='center' variant='h5'>updated on {item.time}
+                        </Typography>
+                    </Grid>
+                    </>
+                )
+            }
         }
     }
 
-    const verify_and_get_data = async (fetch_data_function, callbackSetSignIn, backend_host) => 
+    const get_information_data = async (sensor_url, pmv_url) => 
     {
-        const token = {access_token: null, refresh_token: null}
-        // const backend_host = host;
-        if(localStorage.getItem("access") !== null && localStorage.getItem("refresh") !== null)
-        {
-            token.access_token = localStorage.getItem("access"); 
-            token.refresh_token = localStorage.getItem("refresh");
-        }
-        else
-        {
-            throw new Error("There is no access token and refresh token ....");
-        }
-
-        const verifyAccessToken  = async () =>
-        {
-            //call the API to verify access-token
-            const verify_access_token_API_endpoint = `http://${backend_host}/api/token/verify`
-            const verify_access_token_API_data = 
-            {
-                "token": token.access_token,
-            }
-            const verify_access_token_API_option = 
-            {
-                "method": "POST",
-                "headers": 
+        try {
+            // const sensor_data_response = await fetch(sensor_url);
+            // const pmv_data_response = await fetch(pmv_url);
+            const sensor_data_response = [
                 {
-                    "Content-Type": "application/json",
+                    'sensor_id': 1,
+                    'temp': 24.3,
+                    'humid': 70,
+                    'wind': 4.3,
+                    'pm25': 32,
+                    'time': '2024-05-24 18:00:00',
                 },
-                "body": JSON.stringify(verify_access_token_API_data),
-
-            }
-            const verify_access_token_API_response = await fetch(verify_access_token_API_endpoint, 
-                                                                verify_access_token_API_option,);
-            console.log(verify_access_token_API_response);
-            if(verify_access_token_API_response.status !== 200)
-            {
-                return false;
-            }   
-            return true;
-        }
-
-        /*
-        *brief: this function is to verify the refresh-token and refresh the access-token if the refresh-token is still valid
-        */
-        const verifyRefreshToken  = async () =>
-        {
-            //call the API to verify access-token
-            const verify_refresh_token_API_endpoint = `http://${backend_host}/api/token/refresh`
-            const verify_refresh_token_API_data = 
-            {
-                "refresh": token.refresh_token,
-            }
-            const verify_refresh_token_API_option = 
-            {
-                "method": "POST",
-                "headers": 
                 {
-                    "Content-Type": "application/json",
+                    'sensor_id': 2,
+                    'temp': 25.3,
+                    'humid': 60,
+                    'wind': 4.5,
+                    'pm25': 42,
+                    'time': '2024-05-24 18:15:00',
                 },
-                "body": JSON.stringify(verify_refresh_token_API_data),
-
+                {
+                    'sensor_id': 3,
+                    'temp': 26.7,
+                    'humid': 50,
+                    'wind': 1.2,
+                    'pm25': 12,
+                    'time': '2024-05-24 18:30:00',
+                }
+            ];
+            const pmv_data_response = {
+                'met': 1.1,
+                'clo': 0.6,
             }
-            const verify_refresh_token_API_response = await fetch(verify_refresh_token_API_endpoint, 
-                                                                    verify_refresh_token_API_option,);
-            const verify_refresh_token_API_response_data = await verify_refresh_token_API_response.json();
-            if(verify_refresh_token_API_response.status !== 200)
-            {
-                return false;
+            // if ((sensor_data_response.status === 200) && (pmv_data_response.status === 200)) {   
+            if (1) {   
+            //   const sensor_data_json_= await sensor_data_response.json();
+            //   const pmv_data_json = await pmv_data_response.json();
+              const sensor_data_json = sensor_data_response;
+              const pmv_data_json = pmv_data_response;
+              if (sensor_data_json && pmv_data_json) {
+                let id_list = [];
+                for (let item of sensor_data_json) {
+                    id_list.push(item.sensor_id);
+                    item.aqi = convertPM25toAQI(item.pm25); 
+                    if (item.aqi <= 50) {
+                      item.rating = rating_index[1]['level'];
+                      item.color = rating_index[1]['colour'];
+                    } else if (item.aqi <= 100) {
+                      item.rating = rating_index[2]['level'];
+                      item.color = rating_index[2]['colour'];
+                    } else if (item.aqi <= 150) {
+                        item.rating = rating_index[3]['level'];
+                        item.color = rating_index[3]['colour'];
+                    } else if (item.aqi <= 200) {
+                        item.rating = rating_index[4]['level'];
+                        item.color = rating_index[4]['colour'];
+                    } else if (item.aqi <= 300) {
+                        item.rating = rating_index[5]['level'];
+                        item.color = rating_index[5]['colour'];
+                    } else {
+                        item.rating = rating_index[6]['level'];
+                        item.color = rating_index[6]['colour'];
+                    }
+                }
+                if (nodeID === null) setNodeID(id_list[0]);
+                setNodeIDlist(id_list);
+                getInfoData(sensor_data_json);   
+                getPmvData(pmv_data_json);
+                setIsLoading(false);
+              } else {
+                alert('No info data!');   
+              }
+            } else {
+                if (sensor_data_response.status !== 200)
+                    alert(`Cannot call to server! Error code: ${sensor_data_response.status}`);
+                else
+                    alert(`Cannot call to server! Error code: ${pmv_data_response.status}`);
             }
-            else if(verify_refresh_token_API_response.status === 200 &&  verify_refresh_token_API_response_data.hasOwnProperty("access"))
-            {
-                localStorage.setItem("access", verify_refresh_token_API_response_data["access"]);
-                localStorage.setItem("refresh", verify_refresh_token_API_response_data["refresh"]);
-                return true
-            }
-            else
-            {
-                throw new Error("Can not get new access token ....");
-            }
-        }
-
-        const verifyAccessToken_response = await verifyAccessToken();
-
-        if(verifyAccessToken_response === true)
-        {
-            // const response = await fetch(url)
-            // const data = await response.json()
-            fetch_data_function(url, token["access_token"])
-        }
-        else
-        {
-            let verifyRefreshToken_response = null;
-            try
-            {
-                verifyRefreshToken_response = await verifyRefreshToken();
-            }
-            catch(err)
-            {
-                alert(err);
-            }
-            if(verifyRefreshToken_response === true)
-            {
-                fetch_data_function(url, token["access_token"]);
-            }
-            else
-            {
-                callbackSetSignIn(false);
-            }
-        }
+          } catch (error) {
+            console.error('Error fetching data:', error);
+            alert('Failed to fetch data from server.');
+          }
     }
 
     useEffect(() => {
-        if(time_delay !== 0)
-        {
-            if(infoData === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
-            {
-                verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag); 
-            }
-            else
-            {
-                const timer = setTimeout(()=>{
-                        verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag); 
-                    }, time_delay);
-                return () => clearTimeout(timer);
-            }
+        if (infoData === null || pmvData === null) {
+            get_information_data(sensor_data_url, pmv_data_url)
         }
-        else
-        {
-            verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag); 
+        else {
+            const timer = setTimeout(()=>{
+                get_information_data(sensor_data_url, pmv_data_url)
+            }, time_delay);
+        return () => clearTimeout(timer);
         }
-    },[infoData, nodeData]);
+    },[infoData, pmvData]);
 
     return (
         <>
@@ -320,203 +325,35 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
             isLoading ?
             <h1>Loading...</h1>
             :
-            <Grid container textAlign='center'>
+            <Grid container textAlign='center' justifyContent='center' display='flex'>
                 <Grid xs={12} sm={12} md={12} textAlign="center" columnSpacing={2}>
-                    <Typography fontWeight="bold" fontSize='21px'>
-                        Room info
-                    </Typography>
+                    <Stack marginX={2} direction='row' justifyContent='space-between' alignItems='center'>
+                        <Typography fontWeight="bold" fontSize='21px'>
+                            Node {nodeID}
+                        </Typography>
+                        <FormControl size='small'>
+                            <InputLabel id="select-label">Node id</InputLabel>
+                            <Select
+                                labelId="select-label"
+                                id="demo-simple-select"
+                                value={nodeID}
+                                label="Sensor Node"
+                                onChange={handleChange}
+                            >
+                                {
+                                    nodeIDlist.map((value)=>{
+                                        return (
+                                            <MenuItem value={value}>
+                                                Node {value}
+                                            </MenuItem>
+                                        );
+                                    })
+                                }
+                            </Select>
+                        </FormControl>
+                    </Stack>
                 </Grid>
-                <Grid container spacing={1} marginY={0.5} marginX={1}>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <AQI room_id={room_id} callbackSetSignIn={callbackSetSignIn} />
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' alignItems='center' textAlign='center'>
-                                <Grid item>
-                                    <ThermostatIcon style={{fontSize: '5.1rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Temperature</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>
-                                    {((temp) => {
-                                        if (infoData["temp"]["value"] == 'No data') temp = infoData["temp"]["value"];
-                                        else temp = `${infoData["temp"]["value"]} ${dict_of_enviroment_para_names['temp']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <Co2Icon style={{fontSize: '5.1rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>CO2</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["co2"]["value"] == 'No data') temp = infoData["co2"]["value"];
-                                        else temp = `${infoData["co2"]["value"]} ${dict_of_enviroment_para_names['co2']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <InvertColorsIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Humidity</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["hum"]["value"] == 'No data') temp = infoData["hum"]["value"];
-                                        else temp = `${infoData["hum"]["value"]} ${dict_of_enviroment_para_names['hum']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <FilterDramaIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>TVOC</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["tvoc"]["value"] == 'No data') temp = infoData["tvoc"]["value"];
-                                        else temp = `${infoData["tvoc"]["value"]} ${dict_of_enviroment_para_names['tvoc']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <LensBlurIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Dust</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["dust"]["value"] == 'No data') temp = infoData["dust"]["value"];
-                                        else temp = `${infoData["dust"]["value"]} ${dict_of_enviroment_para_names['dust']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <LightModeIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Light</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["light"]["value"] == 'No data') temp = infoData["light"]["value"];
-                                        else temp = `${infoData["light"]["value"]} ${dict_of_enviroment_para_names['light']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <VolumeUpIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Sound</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{((temp) => {
-                                        if (infoData["sound"]["value"] == 'No data') temp = infoData["sound"]["value"];
-                                        else temp = `${infoData["sound"]["value"]} ${dict_of_enviroment_para_names['sound']['unit']}`
-                                        return temp;
-                                    })()}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                        <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px' }} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
-                            <Grid container display="flex" flexDirection="column" alignContent='center' textAlign='center'>
-                                <Grid item>
-                                    <BoyIcon style={{fontSize: '3rem'}}/>
-                                </Grid>
-                                <Grid item>
-                                    <Typography textAlign='center' variant='h5'>Motion</Typography>
-                                    <Typography textAlign='center' fontWeight='bold' variant='h3'>{infoData["motion"]["value"]}</Typography>
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                        </div>
-                    </Grid>
-                </Grid>
-                <Grid xs={12} textAlign='center' spacing={1} margin={1}>
-                    <Typography textAlign='center' variant='h5'>updated on {
-                                            (()=>{
-                                                const new_time = infoData["time"];
-                                                const utcDate = new Date(new_time * 1000); // Convert seconds to milliseconds
-                                                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'};
-                                                const formattedDateTime = utcDate.toLocaleDateString('en-US', options);
-
-                                                return formattedDateTime;
-                                            })()   //run this function
-                                        }
-                    </Typography>
-                </Grid>
-                {/** save for later */}
-                {/* <Box display="flex" flexDirection="column" justifyContent="center" 
-                    alignItems="center"
-                    // justify="center"
-                    >
-                    <span colSpan="2" style={{ textAlign: 'left', fontWeight: 'bold', width: '300px', fontSize: "15px" }} align="center" nowrap="true">
-                        {(()=>{
-                            let data = "Sensor id: ";
-                            nodeData["sensor"].forEach((e)=>{data += e["node_id"]; data+= ", "})
-                            return data;
-                        })()}
-                    </span>
-                    <span colSpan="2" style={{ textAlign: 'left', fontWeight: 'bold', width: '300px', fontSize: "15px" }} align="center" nowrap="true">
-                        {(()=>{
-                            let data = "Actuator id: ";
-                            nodeData["actuator"].forEach((e)=>{data += e["node_id"]; data+= ", "})
-                            return data;
-                        })()}
-                    </span>
-                    </Box> */}
+                <EnvData />
             </Grid>
         }
         </>
