@@ -3,10 +3,10 @@ import flask
 from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
-# from flask_cors import CORS
+from flask_cors import CORS
 
 app = Flask(__name__)
-# CORS(app)
+CORS(app)
 
 # Hàm để tạo kết nối MySQL
 def create_connection():

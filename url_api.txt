@@ -3,6 +3,32 @@ CHức năng giám sát dữ liệu (du lieu xep theo thu tu thoi gian)
 - sensor: 
 /sensor_node/realtime?room_id={room_id}: lay du lieu moi nhat cua tất cả node_id
 VD: localhost:5000/sensor_node/realtime?room_id=1
+[
+{
+    'sensor_id': 1,
+    'temp': 24.3,
+    'humid': 70,
+    'wind': 4.3,
+    'pm25': 32,
+    'time': '2024-05-24 18:00:00',
+},
+{
+    'sensor_id': 2,
+    'temp': 25.3,
+    'humid': 60,
+    'wind': 4.5,
+    'pm25': 42,
+    'time': '2024-05-24 18:15:00',
+},
+{
+    'sensor_id': 3,
+    'temp': 26.7,
+    'humid': 50,
+    'wind': 1.2,
+    'pm25': 12,
+    'time': '2024-05-24 18:30:00',
+}
+];
 /sensor_node/getall?node_id={node_id}&filter={time_range}: lay du lieu trong khoang thoi gian:
 time_range = 0: 24h gan nhat
 time_range = 1: 1 tuan gan nhat
@@ -38,6 +64,7 @@ time_range = 3: 2 thang gan nhat
 trong đó, building_info là dữ liệu của building_id trong bảng Building
 - thông tin gateway:
 /gateway/getall: lấy dữ liệu các gateway
+/gateway/getByID/{room_id}
 [
 {gateway_id, connected, room_id}
 ]
@@ -61,13 +88,13 @@ wind: rxs->obs->0->msg->iaqi->w->v
 aqi: rxs->obs->0->msg->aqi
 time: rxs->obs->0->msg->time->s
 - pmv:
-/pmv/insert:
 /pmv/env?room_id={room_id}: lấy giá trị met và clo mới nhất
 {
 'met': ..,
 'clo': ..,
 }
-/pmv/getfull?room_id={room_id}&gateway_id={gateway_id}: lấy tất cả giá trị của gateway_id trong room_id
+/pmv/getfull?room_id={room_id}&gateway_id={gateway_id}: lấy tất cả giá trị của gateway_id trong room_id (mới nhất)
+
 - heatmap:
 /heatmap?room_id={room_id}/sensor: lấy nhiệt độ của sensor node mới nhất cho heatmap
 {
@@ -108,6 +135,7 @@ dữ liệu có format như sau:
         'y_axis': ...,
     }, ...,],
 }
+
 chức năng thêm/xóa node:
 ông sửa mỗi bảng registration có thêm trường x_pos và y_pos nhé (2 cái này ko để NOT NULL)
 
