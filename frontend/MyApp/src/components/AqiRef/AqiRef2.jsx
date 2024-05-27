@@ -5,6 +5,7 @@ import ThermostatIcon from '@mui/icons-material/Thermostat';
 import InvertColorsIcon from '@mui/icons-material/InvertColors';
 import FilterDramaIcon from '@mui/icons-material/FilterDrama';
 import SpeedIcon from '@mui/icons-material/Speed';
+import convertTime from "../../data/TimeConvert";
 
 export default function AqiRef({callbackSetSignIn, time_delay})
 {
@@ -34,7 +35,7 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                     'humid': 70,
                     'wind': 4.3,
                     'aqi': 66,
-                    'time': '2024-05-24 18:00:00',
+                    'time': 'Fri, 24 May 2024 18:00:00',
                 }
             ];
             // const props = Object.keys(data_response);
@@ -44,6 +45,7 @@ export default function AqiRef({callbackSetSignIn, time_delay})
               const data_json = data_response;
               if (data_json) {
                 for (let item of data_json) {
+                    item.time = convertTime(item.time)
                     if (item.aqi <= 50) {
                       item.rating = rating_index[1]['level'];
                       item.color = rating_index[1]['colour'];
@@ -203,7 +205,7 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                     </Grid>
                 </Grid>
                 <Grid xs={12} textAlign='center' margin={1}>
-                    <Typography textAlign='center' variant='h5' component='span'>updated on {data[0]['time']}
+                    <Typography textAlign='center' variant='h5' component='span'>updated on {`${data[0].time} `}
                     </Typography>
                     <Typography variant='h5' component='a' color='darkgray' href="https://aqicn.org/city/vietnam/hanoi/">https://aqicn.org/city/vietnam/hanoi/</Typography>
                 </Grid>

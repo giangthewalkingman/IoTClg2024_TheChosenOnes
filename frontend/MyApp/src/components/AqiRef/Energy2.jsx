@@ -1,6 +1,7 @@
 import { React, useEffect, useState } from "react";
 import { Grid, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
+import convertTime from "../../data/TimeConvert"
 
 const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
     const url = `http://${backend_host}/energy_measure/realtime`;
@@ -30,7 +31,7 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
                     'frequency': 50,
                     'active_power': 231.4,
                     'power_factor': 0.99,
-                    'time': 1716288840,
+                    'time': 'May, 26 May 2024 09:00:00 GMT',
                 }
             ];
             // if (data_response.status === 200) {   
@@ -38,6 +39,7 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
             //   const data_json = await data_response.json();
               const data_json = data_response;
               if (data_json) {
+                data_json[0].time = convertTime(data_json[0].time)
                 setEnergyData(data_json);   
                 setIsLoading(false);
               } else {
@@ -103,16 +105,7 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
                     })}
                 </Grid>
                 <Grid xs={12} textAlign='center' spacing={1} marginY={1}>
-                    <Typography textAlign='center' variant='h5'>updated on {
-                                            (()=>{
-                                                const new_time = energyData["time"];
-                                                const utcDate = new Date(new_time * 1000); // Convert seconds to milliseconds
-                                                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'};
-                                                const formattedDateTime = utcDate.toLocaleDateString('en-US', options);
-
-                                                return formattedDateTime;
-                                            })()   //run this function
-                                        }
+                    <Typography textAlign='center' variant='h5'>updated on {energyData[0].time}
                     </Typography>
                 </Grid>
             </Grid>

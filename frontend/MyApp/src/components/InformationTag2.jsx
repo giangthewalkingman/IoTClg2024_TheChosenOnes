@@ -22,6 +22,7 @@ import InvertColorsIcon from '@mui/icons-material/InvertColors';
 import FilterDramaIcon from '@mui/icons-material/FilterDrama';
 import AccessibilityIcon from '@mui/icons-material/Accessibility';
 import WavesIcon from '@mui/icons-material/Waves';
+import convertTime from '../data/TimeConvert';
 
 const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuatorInfoOfRoom}) => {
     const theme = useTheme();
@@ -265,6 +266,7 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
               if (sensor_data_json && pmv_data_json) {
                 let id_list = [];
                 for (let item of sensor_data_json) {
+                    item.time = convertTime(item.time)
                     id_list.push(item.sensor_id);
                     item.aqi = convertPM25toAQI(item.pm25); 
                     if (item.aqi <= 50) {
