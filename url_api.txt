@@ -93,10 +93,10 @@ time: rxs->obs->0->msg->time->s
 'met': ..,
 'clo': ...,
 }
-/pmv/getfull?room_id={room_id}&sensor_id={sensor}: lấy tất cả giá trị của gateway_id trong room_id (mới nhất)
+/pmv/getfull?room_id={room_id}&sensor_id={sensor_id}: lấy tất cả giá trị của sensor_id trong room_id (mới nhất)
 
 - heatmap:
-/heatmap?room_id={room_id}/sensor: lấy nhiệt độ của sensor node mới nhất cho heatmap
+/heatmap/<room_id>: lấy nhiệt độ của sensor node mới nhất cho heatmap
 {
     'sensor': [
         {

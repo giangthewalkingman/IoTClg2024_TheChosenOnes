@@ -1,5 +1,9 @@
+import time
 from datetime import datetime, timedelta
+from multiprocessing import Process
+
 import flask
+import requests
 from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
@@ -919,6 +923,36 @@ def get_all_sensor_nodes():
 
     return jsonify(result), 200  # 200 (OK)
 
+@app.route('/sensor_node/getByRoomId/<room_id>', methods=['GET'])
+def get_sensor_nodes_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor(dictionary=True)
+
+    query = """
+        SELECT s1.*
+        FROM sensor_node s1
+        INNER JOIN (
+            SELECT sensor_id, MAX(time) AS max_time
+            FROM sensor_node
+            GROUP BY sensor_id
+        ) s2 ON s1.sensor_id = s2.sensor_id AND s1.time = s2.max_time
+        """
+
+    try:
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        result = [row for row in rows]
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify(result), 200  # 200 (OK)
+
 @app.route('/sensor_node/getById/<int:sensor_id>/', defaults={'time_range': None}, methods=['GET'])
 @app.route('/sensor_node/getById/<int:sensor_id>/<int:time_range>', methods=['GET'])
 def get_sensor_nodes_by_id(sensor_id, time_range):
@@ -965,19 +999,20 @@ def insert_sensor_node():
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
 
     cursor = db.cursor()
+    sensor_id = request.json.get('sensor_id')
     temp = request.json.get('temp')
     wind = request.json.get('wind')
     humid = request.json.get('humid')
     pm25 = request.json.get('pm25')
     status = request.json.get('status')
 
-    if None in (temp, wind, humid, pm25, status):
+    if None in (sensor_id, temp, wind, humid, pm25, status):
         cursor.close()
         db.close()
         return jsonify({"error": "Missing required fields"}), 400  # Bad Request
 
-    query = "INSERT INTO sensor_node (temp, wind, humid, pm25, status) VALUES (%s, %s, %s, %s, %s)"
-    cursor.execute(query, (temp, wind, humid, pm25, status))
+    query = "INSERT INTO sensor_node (sensor_id, temp, wind, humid, pm25, status) VALUES (%s, %s, %s, %s, %s, %s)"
+    cursor.execute(query, (sensor_id, temp, wind, humid, pm25, status))
     db.commit()
 
     cursor.close()
@@ -1120,5 +1155,273 @@ def delete_registration_sensor(room_id, sensor_id):
         db.close()
         return jsonify({"error": "Failed to delete registration sensor"}), 500  # Lỗi máy chủ nội bộ
 
+@app.route('/local_weather/getlast', methods=['GET'])
+def get_last_local_weather():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM local_weather ORDER BY time DESC LIMIT 1")
+    key = [desc[0] for desc in cursor.description]
+    row = cursor.fetchone()
+    result = dict(zip(key, row)) if row else {}
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
+@app.route('/local_weather/insert', methods=['POST'])
+def local_weather_insert():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    try:
+        url = "https://api2.waqi.info/api/feed/@1583/aqi.json"
+        response = requests.get(url)
+        if response.status_code != 200:
+            return jsonify({"error": "Unable to fetch data from AQICN API"}), 500
+
+        data = response.json()
+        # print(data)
+        try:
+            iaqi = data['rxs']['obs'][0]['msg']['iaqi']
+            temp = iaqi['t']['v']
+            humid = iaqi['h']['v']
+            wind = iaqi['w']['v']
+            aqi = data['rxs']['obs'][0]['msg']['aqi']
+            time = data['rxs']['obs'][0]['msg']['time']['s']
+
+            formatted_data = {
+                'temp': temp,
+                'humid': humid,
+                'wind': wind,
+                'aqi': aqi,
+                'time': time
+            }
+        except KeyError as e:
+            print(f"Key error: {e}")
+            return jsonify({"error": "Unable to format data from AQICN API"}), 500
+
+        cursor = db.cursor()
+        insert_query = """
+            INSERT INTO local_weather (temp, humid, wind, aqi, time)
+            VALUES (%s, %s, %s, %s, %s)
+            """
+        values = (formatted_data['temp'], formatted_data['humid'], formatted_data['wind'], formatted_data['aqi'],
+                  formatted_data['time'])
+        cursor.execute(insert_query, values)
+        db.commit()
+
+        cursor.close()
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+    finally:
+        db.close()
+
+    return jsonify({"message": "Weather data fetched and stored successfully"}), 200
+
+def schedule_weather_insert():
+    with app.app_context():
+        while True:
+            local_weather_insert()
+            time.sleep(3600)
+
+@app.route('/pmv/insert', methods=['POST'])
+def insert_pmv():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    room_id = request.json.get('room_id')
+    sensor_id = request.json.get('sensor_id')
+    met = request.json.get('met')
+    clo = request.json.get('clo')
+    temp = request.json.get('temp')
+    wind = request.json.get('wind')
+    pmv_ref = request.json.get('pmv_ref')
+    pmv = request.json.get('pmv')
+    status = request.json.get('status')
+
+    print((room_id, sensor_id, met, clo, temp, wind, pmv_ref, pmv, status))
+    # Kiểm tra xem các trường bắt buộc có tồn tại và có kiểu dữ liệu hợp lệ không
+    if any(v is None for v in (room_id, sensor_id, met, clo, temp, wind, pmv_ref, pmv, status)):
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    try:
+        # Thêm dữ liệu vào bảng pmv_table
+        query = ("INSERT INTO pmv_table (room_id, sensor_id, met, clo, temp, wind, pmv_ref, pmv, status) "
+                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+        cursor.execute(query, (room_id, sensor_id, met, clo, temp, wind, pmv_ref, pmv, status))
+        db.commit()
+    except mysql.connector.Error as err:
+        db.rollback()
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify({"message": "pmv added successfully"}), 201  # 201 (Created)
+
+@app.route('/pmv/getall', methods=['GET'])
+def get_all_pmv():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM pmv_table")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200  # 200 (OK)
+
+@app.route('/pmv/env', methods=['GET'])
+def get_max_env_values():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(met), MAX(clo) FROM pmv_table")
+    max_values = cursor.fetchone()
+
+    if max_values is None:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No data available"}), 404
+
+    max_env_values = {
+        'max_met': max_values[0],
+        'max_clo': max_values[1]
+    }
+
+    cursor.close()
+    db.close()
+
+    return jsonify(max_env_values), 200
+
+@app.route('/pmv/getfull/<room_id>/<sensor_id>', methods=['GET'])
+def getfull_pmv(room_id, sensor_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    query = ("SELECT * FROM pmv_table WHERE room_id = %s AND sensor_id = %s ORDER BY time DESC LIMIT 1")
+    cursor.execute(query, (room_id, sensor_id))
+    row = cursor.fetchone()
+
+    if row:
+        key = [desc[0] for desc in cursor.description]
+        result = dict(zip(key, row))
+    else:
+        result = {}
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
+@app.route('/heatmap/getlast/<room_id>', methods=['GET'])
+def getlast_heatmap(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor(dictionary=True)
+
+    # Lấy thông tin các sensor node mới nhất cho từng sensor trong phòng
+    query = ("""
+        SELECT 
+            a.sensor_id, 
+            b.temp, 
+            a.x_pos, 
+            a.y_pos 
+        FROM 
+            registration_sensor a 
+        JOIN 
+            sensor_node b ON a.sensor_id = b.sensor_id 
+        WHERE 
+            a.room_id = %s AND b.time = (
+                SELECT MAX(time) 
+                FROM sensor_node 
+                WHERE sensor_id = a.sensor_id
+            )
+    """)
+    cursor.execute(query, (room_id,))
+    sensors = cursor.fetchall()
+
+    # Lấy thông tin kích thước phòng
+    query = ("SELECT x_length, y_length FROM room WHERE room_id = %s")
+    cursor.execute(query, (room_id,))
+    room = cursor.fetchone()
+
+    cursor.close()
+    db.close()
+
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    result = {
+        "sensor": sensors,
+        "room": {
+            "x_length": room["x_length"],
+            "y_length": room["y_length"]
+        }
+    }
+
+    return jsonify(result), 200
+
+@app.route('/heatmap/getPosNode/<room_id>', methods=['GET'])
+def get_pos_nodes_headmap(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor(dictionary=True)
+
+    result = {
+        'sensor': [],
+        'em': [],
+        'fan': [],
+        'ac': []
+    }
+
+    try:
+        # Lấy thông tin các sensor nodes
+        cursor.execute("SELECT sensor_id, x_pos, y_pos FROM registration_sensor WHERE room_id = %s", (room_id,))
+        result['sensor'] = cursor.fetchall()
+
+        # Lấy thông tin các em
+        cursor.execute("SELECT em_id, x_pos, y_pos FROM registration_em WHERE room_id = %s", (room_id,))
+        result['em'] = cursor.fetchall()
+
+        # Lấy thông tin các fan
+        cursor.execute("SELECT fan_id, x_pos, y_pos FROM registration_fan WHERE room_id = %s", (room_id,))
+        result['fan'] = cursor.fetchall()
+
+        # Lấy thông tin các ac
+        cursor.execute("SELECT ac_id, x_pos, y_pos FROM registration_ac WHERE room_id = %s", (room_id,))
+        result['ac'] = cursor.fetchall()
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify(result), 200
+
 if __name__ == '__main__':
+    weather_process = Process(target=schedule_weather_insert)
+    weather_process.start()
+
     app.run(debug=True)

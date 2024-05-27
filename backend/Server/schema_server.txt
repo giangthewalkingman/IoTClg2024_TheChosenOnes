@@ -113,6 +113,32 @@ CREATE TABLE `schema_server`.`user` (
 `status` INT NOT NULL ,
 PRIMARY KEY (`user_id`)) ENGINE = InnoDB;
 
+CREATE TABLE `schema_server`.`pmv_table` (
+`pmv_id` INT NOT NULL AUTO_INCREMENT ,
+`room_id` INT NOT NULL ,
+`met` REAL NOT NULL ,
+`clo` REAL NOT NULL ,
+`temp` REAL NOT NULL ,
+`wind` REAL NOT NULL ,
+`pmv_ref` REAL NOT NULL ,
+`pmv` REAL NOT NULL ,
+`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ,
+`status` INT NOT NULL ,
+PRIMARY KEY (`pmv_id`)) ENGINE = InnoDB;
+
+ALTER TABLE `pmv_table` ADD CONSTRAINT `room_id` FOREIGN KEY (`room_id`)
+REFERENCES `room`(`room_id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+CREATE TABLE `schema_server`.`local_weather` (
+`lw_id` INT NOT NULL AUTO_INCREMENT ,
+`temp` REAL NOT NULL ,
+`humid` REAL NOT NULL ,
+`wind` REAL NOT NULL ,
+`co2` REAL NOT NULL ,
+`aqi` INT NOT NULL ,
+`time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ,
+PRIMARY KEY (`lw_id`)) ENGINE = InnoDB;
+
 ALTER TABLE `registration_ac`
 ADD `x_pos` REAL NOT NULL AFTER `ac_id`,
 ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
@@ -128,3 +154,15 @@ ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
 ALTER TABLE `registration_sensor`
 ADD `x_pos` REAL NOT NULL AFTER `sensor_id`,
 ADD `y_pos` REAL NOT NULL AFTER `x_pos`;
+
+CREATE TABLE `schema_server`.`registration_gateway` (
+`gateway_id` INT NOT NULL AUTO_INCREMENT ,
+`room_id` INT NOT NULL ,
+`connected` INT NOT NULL ,
+`mac` VARCHAR(30) NOT NULL ,
+`description` TEXT NOT NULL ,
+`x_pos` REAL NOT NULL ,
+`y_pos` REAL NOT NULL ,
+PRIMARY KEY (`gateway_id`)) ENGINE = InnoDB;
+
+ALTER TABLE `pmv_table` ADD `sensor_id` INT NOT NULL AFTER `room_id`;
