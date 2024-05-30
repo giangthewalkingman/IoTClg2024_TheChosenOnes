@@ -1,52 +1,80 @@
 import SetTimer from "./SetTimer";
 import Control from "./GaugeChart/Control";
 import ActuatorStatus from "./ActuatorStatus";
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import { Box, Button, IconButton, Stack, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import Header from "../../components/Header";
+import Header from "../Header";
 import { useState, useEffect } from "react";
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { host } from "../../App";
 import SetTemperature from "./SetTemperature";
-import convertTime from "../../data/TimeConvert";
+import { DataGrid } from '@mui/x-data-grid';
+import ActuatorList from "./ActuatorList";
 
 export default function Actuator({room_id, callbackSetSignIn})
 {    
     const [actuatorStatus, setActuatorStatus] = useState(null);
-    const [actuatorInfoOfRoom, setActuatorInfoOfRoom] = useState(null);
+    const [actuatorInfoOfRoom, setActuatorInfoOfRoom] = useState([]);
     const theme = useTheme();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     
-    const url = `http://${host}/api/room/information_tag?room_id=${room_id}`;
+    const ac_data_url = `http://${host}/air_conditioner/getlast/${room_id}`;
+    const fan_data_url = `http://${host}/fan/getlast/${room_id}`;
 
-    const get_information_data = async (url) => 
+    const get_information_data = async (ac_data_url, fan_data_url) => 
     {
         try {
-            // const data_response = await fetch(url);
-            const data_response = [
+            // const fan_data_response = await fetch(fan_data_url);
+            // const ac_data_response = await fetch(ac_data_url);
+            const fan_data_response = [
                 {
-                    'voltage': 220.1,
-                    'current': 1.4,
-                    'frequency': 50,
-                    'active_power': 231.4,
-                    'power_factor': 0.99,
-                    'time': 'May, 26 May 2024 09:00:00 GMT',
+                    "control_mode": 2,
+                    "fan_id": 1,
+                    "id": 6,
+                    "set_speed": 70.0,
+                    "set_time": 250,
+                    "status": 1,
+                    "time": "Wed, 22 May 2024 08:45:00 GMT"
+                },
+                {
+                    "control_mode": 2,
+                    "fan_id": 2,
+                    "id": 8,
+                    "set_speed": 14.0,
+                    "set_time": 250,
+                    "status": 1,
+                    "time": "Wed, 22 May 2024 08:45:00 GMT"
                 }
+            ]
+            const ac_data_response = [
+                {
+                    "ac_id": 1,
+                    "control_mode": 0,
+                    "id": 1,
+                    "set_temp": 25.0,
+                    "state": 1,
+                    "status": 1,
+                    "time": "Wed, 22 May 2024 06:00:00 GMT"
+                },
             ];
-            // if (data_response.status === 200) {   
+            // if ((ac_data_response.status === 200) && (fan_data_response.status === 200)) {   
             if (1) {   
-            //   const data_json = await data_response.json();
-              const data_json = data_response;
-              if (data_json) {
-                data_json[0].time = convertTime(data_json[0].time)
-                // setEnergyData(data_json);   
+            //   const fan_data_json = await fan_data_response.json();
+            //   const ac_data_json = await ac_data_response.json();
+              const fan_data_json = fan_data_response;
+              const ac_data_json = ac_data_response;
+              if (fan_data_json && ac_data_json) {
+                
                 setIsLoading(false);
               } else {
                 alert('No energy data!');
               }
             } else {
-              alert(`Cannot call to server! Error code: ${data_response.status}`);
+                if (fan_data_response.status !== 200)
+                    alert(`Cannot call to server! Error code: ${fan_data_response.status}`);
+                else
+                    alert(`Cannot call to server! Error code: ${ac_data_response.status}`);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -55,7 +83,7 @@ export default function Actuator({room_id, callbackSetSignIn})
     }
 
     useEffect(() => {
-        get_information_data(url)
+        get_information_data(ac_data_url, fan_data_url)
     },[]);
 
     return (
@@ -65,6 +93,22 @@ export default function Actuator({room_id, callbackSetSignIn})
         <h1>Loading ...</h1>
         :
             <>
+            <Grid container px={1} xs={12} sm={12} md={12} rowSpacing={2}>
+                <Grid item xs={12}>
+                    <Box
+                        sx={{boxShadow: 0,
+                            borderRadius: '5px', 
+                            backgroundColor: theme.palette.background.paper}}
+                        width="100%" height="100%" display="flex"
+                        flexDirection="column" alignContent="center" justifyContent="center"
+                    >
+                        <Grid container display='flex' flexDirection='row'>
+                            <ActuatorList actuator='air_con' />
+                            <ActuatorList actuator='fan' />
+                        </Grid>
+                    </Box>
+                </Grid>
+            </Grid>
             {
                 actuatorInfoOfRoom.length !== 0 ?
                 <>
@@ -230,9 +274,9 @@ export default function Actuator({room_id, callbackSetSignIn})
                         direction="column"
                     >
                         <Box 
-                            sx={{boxShadow: 1,
+                            sx={{boxShadow: 0,
                                 borderRadius: '5px', 
-                                backgroundColor: "white"}}
+                                backgroundColor: theme.palette.background.paper}}
                             width="100%"
                             height="100%"
                             display="flex"

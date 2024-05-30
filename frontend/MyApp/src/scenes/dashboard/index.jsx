@@ -10,7 +10,7 @@ import InformationTag from "../../components/InformationTag2";
 import { useLocation } from "react-router-dom"; 
 import RoomMap from "../../components/RoomMap/RoomMap2";
 import AqiRef from "../../components/AqiRef/AqiRef2";
-import Actuator from "../../components/Actuator/Actuator";
+import Actuator from "../../components/Actuator/Actuator2";
 import EnergyChart from "../../components/EnergyChart/EnergyChart2";
 
 const Dashboard = () => {

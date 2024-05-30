@@ -84,12 +84,6 @@ const VictoryLineChart = ({data_x, data_y, option_data, parameter_type}) =>
             height={100}
             padding={{left: 20, right: 20, bottom: 12}}
             domain={Math.max(data_y) + 1}
-            // containerComponent={
-            //     <VictoryZoomContainer
-            //         // minZoom={{y: Math.min(...data_y) - 1}} // Minimum zoom level
-            //         // maxZoom={{y: Math.max(...data_y) + 1}} // Maximum zoom level
-            //     />
-            // }
         >
             <VictoryAxis  
                 fixLabelOverlap={true}  

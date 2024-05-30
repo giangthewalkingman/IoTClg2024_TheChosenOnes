@@ -117,7 +117,7 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
                 'y_axis': 250,
             },],
         }
-        // if ((heatmap_data_response.status === 200) & (node_position_response.status === 200)) {   
+        // if ((heatmap_data_response.status === 200) && (node_position_response.status === 200)) {   
         if (1) {   
         //   const heatmap_data_json = await heatmap_data_response.json();
         //   const node_position_json = await node_position_response.json();

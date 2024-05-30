@@ -92,7 +92,7 @@ const Landing = () => {
                         >
                         {/* xs=collum's width sm={16} md={4} */}
                             <Card
-                            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                            sx={{ boxShadow: 0, height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                             <Box
                                 container
