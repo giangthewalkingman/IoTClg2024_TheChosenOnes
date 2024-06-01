@@ -8,29 +8,30 @@ import AirIcon from '@mui/icons-material/Air';
 import WindPowerIcon from '@mui/icons-material/WindPower';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 
-const HeatmapContainer = styled('div')({
-  position: 'relative',
-  width: '321px',
-  height: '351px',
-});
+const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pic_src, showHeatmap, map_length}) => {
+  const HeatmapContainer = styled('div')({
+    position: 'relative',
+    width: map_length.x,
+    height: map_length.y,
+  });
+  
+  const HeatmapImg = styled('img')({
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    position: 'absolute',
+    opacity: showHeatmap ? '0%' : '100%',
+  });
+  
+  const HeatmapOverlay = styled('div')({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    opacity: showHeatmap ? '100%' : '0%',
+  });
 
-const HeatmapImg = styled('img')({
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  position: 'absolute'
-});
-
-const HeatmapOverlay = styled('div')({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  opacity: '200%'
-});
-
-const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pic_src, showHeatmap}) => {
   const heatmapRef = useRef(null);
   
   const SensorButton = styled(IconButton)({
@@ -69,12 +70,12 @@ const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pi
     };
 
     heatmapInstance.setData(data);
-  }, [heatMapData]);
+  }, [heatMapData, showHeatmap]);
 
   return (
     <HeatmapContainer>
-      <HeatmapImg hidden={showHeatmap ? true : false} src={pic_src} alt="Map view" />
-      <HeatmapOverlay hidden={showHeatmap ? false : true} ref={heatmapRef} />
+      <HeatmapImg src={pic_src} alt="Map view" />
+      <HeatmapOverlay ref={heatmapRef} />
       {sensorPos.map((sensor, index) => (
           <SensorButton
             size='large'

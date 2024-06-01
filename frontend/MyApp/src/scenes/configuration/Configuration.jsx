@@ -1,14 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import Link from '@mui/material/Link';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Header from '../../components/Header';
 import { Container, Box, useTheme } from '@mui/material';
-import Paper from '@mui/material/Paper';
 import RoomConfig from './room/RoomConfig';
 import NodeConfig from './node/NodeConfig';
 
@@ -25,12 +17,10 @@ export default function Configuration() {
         <Container maxWidth="2000px"
             sx={{
                 marginTop: '0px',
-                // boxShadow: 1,
-                // borderRadius: '5px', 
                 bgcolor: theme.palette.background.default,
             }}
         >
-            <Box p="20px" />
+            <Box p="1px" />
             {
                 dict[config]
             }

@@ -38,6 +38,7 @@
     "react-pro-sidebar": "^0.7.1",
     "react-router-dom": "^6.10.0",
     "react-scripts": "5.0.1",
+    "react-swipeable-views": "^0.14.0",
     "victory": "^36.6.11",
     "web-vitals": "^2.1.4",
     "yup": "^1.0.2"

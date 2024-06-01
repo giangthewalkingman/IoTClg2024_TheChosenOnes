@@ -19,6 +19,7 @@ const Dashboard = () => {
     const data_passed_from_landingpage = location.state;
     let room_id = data_passed_from_landingpage == null ? 1 : data_passed_from_landingpage.room_id
     const theme = useTheme();
+    const map_length = {x: 321.0, y: 351.0};
     const callbackSetSignIn = useContext(UserContext);
     const [id, setId] = useState(1);
     const [optionData, setOptionData] = useState("now");        //change option to show different Chart
@@ -121,6 +122,7 @@ const Dashboard = () => {
                     >
                         <RoomMap 
                             room_id={room_id} callbackSetSignIn={callbackSetSignIn} backend_host={host}
+                            map_length={map_length} heatMapView={true}
                         />
                     </Box>
                 </Grid>

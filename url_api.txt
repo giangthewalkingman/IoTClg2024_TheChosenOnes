@@ -47,7 +47,7 @@ time_range = 3: 2 thang gan nhat
 /fan/getall?fan_id={fan_id}: lay du lieu moi nhat cua fan_id
 - thông tin building, room:
 /building/getall (giữ nguyên)
-/room/getall: lấy dữ liệu phòng có format như sau:
+/room/getByID/room_id: lấy dữ liệu phòng có format như sau:
 [
     {
         building_info:{
@@ -145,6 +145,9 @@ chức năng thêm/xóa node:
 /registration_sensor/delete (giu nguyen)
 /registration_sensor/update?room_id={room_id}&sensor_id={sensor_id}: update thêm x_pos và y_pos vào thông tin của sensor_id và room_id
 nếu sensor_id và room_id ko khớp trong database thì phải trả về bản tin báo lỗi
+
+chức năng tạo phòng:
+
 
 Chức năng kiểm tra kết nối (tạm thời bỏ qua)
 Chức năng điều khiển (tạm thời bỏ qua)

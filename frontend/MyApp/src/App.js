@@ -56,7 +56,6 @@ function App() {
                             }
                             <Route path="/weatherdata" element={<Weatherdata/>} />
                         </Routes>
-s
                         <Footer/>
                     </main>
                     </div>

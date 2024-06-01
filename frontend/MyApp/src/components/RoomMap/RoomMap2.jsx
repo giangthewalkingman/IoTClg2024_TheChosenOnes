@@ -11,14 +11,14 @@ import HeatmapComponent from "./HeatmapComponent";
  *          sticks to it in real position according to the x and y axises provided
  *          in database backend.
  */
-const RoomMap = ({room_id, callbackSetSignIn, backend_host}) => 
+const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapView}) => 
 {
     const [heatMapData, setHeatMapData] = useState({'sensor' : null, 'room': null});
     const [sensorPos, setSensorPos] = useState([]);
     const [energyPos, setEnergyPos] = useState([]);
     const [fanPos, setFanPos] = useState([]);
     const [airPos, setAirPos] = useState([]);
-    const [showHeatmap, setShowHeatmap] = useState(true);
+    const [showHeatmap, setShowHeatmap] = useState(heatMapView);
     const theme = useTheme();
     
     /**
@@ -133,8 +133,8 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
             let ac_pos = [];
             for (let item of heatmap_data_json.sensor) {
                 let newObj = {
-                    x: Math.floor(item.x_axis * 321.0 / x_length),
-                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    x: Math.floor(item.x_axis * map_length.x / x_length),
+                    y: Math.floor(item.y_axis * map_length.y / y_length),
                     value: Math.round(item.temp),
                     radius: 350,
                 }
@@ -143,32 +143,32 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
             for (let item of node_position_json.sensor) {
                 let newObj = {
                     id: item.sensor_id,
-                    x: Math.floor(item.x_axis * 321.0 / x_length),
-                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    x: Math.floor(item.x_axis * map_length.x / x_length),
+                    y: Math.floor(item.y_axis * map_length.y / y_length),
                 }
                 sensor_pos.push(newObj);
             }
             for (let item of node_position_json.energy) {
                 let newObj = {
                     id: item.em_id,
-                    x: Math.floor(item.x_axis * 321.0 / x_length),
-                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    x: Math.floor(item.x_axis * map_length.x / x_length),
+                    y: Math.floor(item.y_axis * map_length.y / y_length),
                 }
                 energy_pos.push(newObj);
             }
             for (let item of node_position_json.fan) {
                 let newObj = {
                     id: item.fan_id,
-                    x: Math.floor(item.x_axis * 321.0 / x_length),
-                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    x: Math.floor(item.x_axis * map_length.x / x_length),
+                    y: Math.floor(item.y_axis * map_length.y / y_length),
                 }
                 fan_pos.push(newObj);
             }
             for (let item of node_position_json.ac) {
                 let newObj = {
                     id: item.ac_id,
-                    x: Math.floor(item.x_axis * 321.0 / x_length),
-                    y: Math.floor(item.y_axis * 351.0 / y_length),
+                    x: Math.floor(item.x_axis * map_length.x / x_length),
+                    y: Math.floor(item.y_axis * map_length.y / y_length),
                 }
                 ac_pos.push(newObj);
             }
@@ -227,6 +227,7 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host}) =>
                         airPos={airPos}
                         pic_src={dict_plan[1]}
                         showHeatmap={showHeatmap}
+                        map_length={map_length}
                     />
                 </Grid>
                 <Grid item container justifyContent='center' xs={12} marginY={3}>
