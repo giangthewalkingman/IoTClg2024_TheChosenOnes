@@ -166,3 +166,19 @@ CREATE TABLE `schema_server`.`registration_gateway` (
 PRIMARY KEY (`gateway_id`)) ENGINE = InnoDB;
 
 ALTER TABLE `pmv_table` ADD `sensor_id` INT NOT NULL AFTER `room_id`;
+
+ALTER TABLE `registration_fan` ADD `model` TEXT NOT NULL AFTER `y_pos`,
+ADD `sensor_link` TEXT NOT NULL AFTER `model`;
+
+ALTER TABLE `registration_ac` ADD `model` TEXT NOT NULL AFTER `y_pos`,
+ADD `sensor_link` TEXT NOT NULL AFTER `model`
+
+CREATE TABLE `schema_server`.`fan_device` (
+`fan_id` INT NOT NULL ,
+`x_pos_device` REAL NOT NULL ,
+`y_pos_device` REAL NOT NULL ) ENGINE = InnoDB;
+
+CREATE TABLE `schema_server`.`ac_device` (
+`ac_id` INT NOT NULL ,
+`x_pos_device` REAL NOT NULL ,
+`y_pos_device` REAL NOT NULL ) ENGINE = InnoDB;
