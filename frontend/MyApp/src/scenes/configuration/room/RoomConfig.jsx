@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 
 import { Container,Button, CssBaseline, Box, Typography } from '@mui/material';
 import Paper from '@mui/material/Paper';
@@ -7,11 +7,6 @@ import { host } from '../../../App';
 import { UserContext } from '../../../App';
 import NewRoom from './NewRoom';
 import RoomList from './RoomList';
-
-
-function preventDefault(event) {
-  event.preventDefault();
-}
 
 export default function RoomConfig({setConfig, setRoomIdForNodeConfig, setRoomSize}) {
     const [reloadRoomConfig, setReloadRoomConfig] = useState(false);
@@ -32,7 +27,7 @@ export default function RoomConfig({setConfig, setRoomIdForNodeConfig, setRoomSi
                             New Room
                         </Typography>
                         <React.Fragment>
-                            <NewRoom  />
+                            <NewRoom />
                         </React.Fragment>
                     </Paper>
                 </Container>

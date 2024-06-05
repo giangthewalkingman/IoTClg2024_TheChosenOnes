@@ -143,7 +143,7 @@ const ActuatorList = ({ actuator }) => {
                 backgroundColor: controlModes[params.row.id] === value.value ? theme.palette.text.primary : theme.palette.background.paper,
                 color: controlModes[params.row.id] === value.value ? theme.palette.background.paper : theme.palette.text.primary,
               }}
-              size="medium"
+              size="small"
               value={value.value}
               variant="outlined"
               onClick={() => handleControlModeChange(params.row.id, value.value)}
@@ -170,7 +170,7 @@ const ActuatorList = ({ actuator }) => {
             borderColor: theme.palette.text.primary,
             color: theme.palette.text.primary,
           }}
-          size="medium"
+          size="small"
           value={params.value}
           variant='outlined'
           onClick={() => {

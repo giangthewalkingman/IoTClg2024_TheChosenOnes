@@ -1,7 +1,7 @@
 import SetTimer from "./SetTimer";
 import Control from "./GaugeChart/Control";
 import ActuatorStatus from "./ActuatorStatus";
-import { Box, Button, IconButton, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Button, IconButton, Stack, Typography, useTheme, TextField } from "@mui/material";
 import { tokens } from "../../theme";
 import Header from "../Header";
 import { useState, useEffect } from "react";
@@ -93,7 +93,71 @@ export default function Actuator({room_id, callbackSetSignIn})
         <h1>Loading ...</h1>
         :
             <>
-            <Grid container px={1} xs={12} sm={12} md={12} rowSpacing={2}>
+            <Grid container p={1} xs={12} sm={12} md={12} rowSpacing={2}>
+                <Grid item xs={12}>
+                    <Box
+                        px={1} py={1}
+                        sx={{boxShadow: 0,
+                            borderRadius: '5px', 
+                            backgroundColor: theme.palette.background.paper}}
+                        width="100%" height="100%" display="flex" alignContent="center" justifyContent="center"
+                    >
+                        <Grid container>
+                            <Grid item xs={12} md={6} alignContent='center'>
+                                <Typography variant="h3" fontWeight='bold'>
+                                    Room environment settings
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} md={6} alignContent='center'>
+                                <Stack direction={{xs: 'column', md: 'row'}} justifyContent='flex-end' alignItems='center' spacing={3}>
+                                    <TextField
+                                        required
+                                        id="met"
+                                        name="met"
+                                        label="Metabolic rate"
+                                        autoComplete="met"
+                                        variant="standard"
+                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '') }}
+                                    />
+                                    <TextField
+                                        required
+                                        id="clo"
+                                        name="clo"
+                                        label="Clothing insulation"
+                                        autoComplete="clo"
+                                        variant="standard"
+                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '') }}
+                                    />
+                                    <TextField
+                                        required
+                                        id="pmv_ref"
+                                        name="pmv_ref"
+                                        label="PMV reference"
+                                        autoComplete="pmv_ref"
+                                        variant="standard"
+                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, '') }}
+                                    />
+                                    <Button
+                                        sx={{
+                                            "min-width": "30px",
+                                            fontSize: "16px",
+                                            fontWeight: "bold",
+                                        }}
+                                        style={{
+                                            borderColor: theme.palette.background.paper,
+                                            backgroundColor: theme.palette.text.primary,
+                                            color: theme.palette.background.paper,
+                                        }}
+                                        size="small"
+                                        // onClick={}
+                                    >
+                                        Set
+                                    </Button>
+                                </Stack>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </Grid>
                 <Grid item xs={12}>
                     <Box
                         sx={{boxShadow: 0,
@@ -109,186 +173,6 @@ export default function Actuator({room_id, callbackSetSignIn})
                     </Box>
                 </Grid>
             </Grid>
-            {
-                actuatorInfoOfRoom.length !== 0 ?
-                <>
-                    {
-                        actuatorInfoOfRoom.map(e=>{
-                            return(
-                                <Grid
-                                container
-                                alignItems="stretch"
-                                style={{
-                                        display: "flex", 
-                                        height: "100%", 
-                                        // backgroundColor: "red"
-                                    }}
-                                justify="space-between" 
-                            >
-                                <Grid
-                                    xs={12}
-                                    sm={12}
-                                    md={12}
-                                    lg={12}
-                                    container="true"
-                                    display="flex"
-                                    direction="column"
-                                >
-                                    <Box 
-                                        sx={{boxShadow: 0,
-                                            borderRadius: '5px', 
-                                            backgroundColor: theme.palette.background.paper}}
-                                        width="100%"
-                                        height="100%"
-                                        display="flex"
-                                        flexDirection="column"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <h1>Actuator node id: {e["node_id"]}</h1>
-                                    </Box>
-                                </Grid>
-
-                                <Grid
-                                    p="10px"
-                                    xs={12}
-                                    sm={12}
-                                    md={12}
-                                    lg={4}
-                                    container="true"
-                                    display="flex"
-                                    direction="column"
-                                >
-                                    <Box 
-                                        sx={{boxShadow: 0,
-                                            borderRadius: '5px', 
-                                            backgroundColor: theme.palette.background.paper}}
-                                        width="100%"
-                                        height="100%"
-                                        display="flex"
-                                        flexDirection="column"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <Box mt="10px" mb="15px">
-                                            <SetTimer actuatorStatus={actuatorStatus}
-                                                    room_id={room_id}
-                                                    callbackSetSignIn={callbackSetSignIn}
-                                                    node_id={e["node_id"]}
-                                                    />
-                                        </Box>
-                                    </Box>
-                                    
-                                </Grid>
-                                <Grid
-                                        p="10px"
-                                        item={true}
-                                        xs={12}
-                                        sm={12}
-                                        lg={4}
-                                        display="flex"
-                                        direction="column"
-                                        alignItems="center"
-                                        justify="center"
-                                        
-                                    >
-                                        <Box 
-                                            sx={{boxShadow: 0,
-                                                borderRadius: '5px', 
-                                                backgroundColor: theme.palette.background.paper}}
-                                            width="100%"
-                                            height="100%"
-                                            display="flex"
-                                            flexDirection="column"
-                                            alignItems="center"
-                                            justifyContent="center"
-                                        >
-                                            <Box mt="10px" mb="10px">
-                                                {/* <Header title="Set temperature:" fontSize="20px"/> */}
-                                                {/* <Control room_id={room_id} callbackSetSignIn={callbackSetSignIn} actuatorStatus={actuatorStatus}/> */}
-                                                <SetTemperature actuatorStatus={actuatorStatus} node_id={e["node_id"]} callbackSetSignIn={callbackSetSignIn} room_id={room_id}/>
-                                            </Box>
-                                        </Box>
-                                </Grid>
-                                <Grid
-                                    p="10px"
-                                    xs={12}
-                                    sm={12}
-                                    md={12}
-                                    lg={4}
-                                    container="true"
-                                    display="flex"
-                                    direction="column"
-                                >
-                                    <Box
-                                        sx={{boxShadow: 0,
-                                            borderRadius: '5px', 
-                                            backgroundColor: theme.palette.background.paper}}
-                                        width="100%"
-                                        height="100%"
-                                        display="flex"
-                                        flexDirection="column"
-                                        alignItems="center"
-                                        justifyContent="center"
-                                    >
-                                        <Box mt="10px" mb="15px"
-                                        display="flex"
-                                        flexDirection="column"
-                                        alignItems="center"
-                                        justify="center">
-
-                                            <Header title="Actuator Status:" fontSize="20px"/>
-                                            <ActuatorStatus room_id={room_id} setActuatorStatus={setActuatorStatus} callbackSetSignIn={callbackSetSignIn}
-                                                node_id={e["node_id"]}
-                                                actuatorStatus={actuatorStatus}    
-                                            />
-                                        </Box>
-                                    </Box>
-
-                                </Grid>
-                            </Grid>
-                            )
-                        })
-                    }
-                </>
-                
-                :
-                <Grid
-                    container
-                    alignItems="stretch"
-                    style={{
-                            display: "flex", 
-                            height: "100%", 
-                            // backgroundColor: "red"
-                        }}
-                    justify="space-between" 
-                >
-                    <Grid
-                        p="10px"
-                        xs={12}
-                        sm={12}
-                        md={12}
-                        lg={12}
-                        container="true"
-                        display="flex"
-                        direction="column"
-                    >
-                        <Box 
-                            sx={{boxShadow: 0,
-                                borderRadius: '5px', 
-                                backgroundColor: theme.palette.background.paper}}
-                            width="100%"
-                            height="100%"
-                            display="flex"
-                            flexDirection="column"
-                            alignItems="center"
-                            justifyContent="center"
-                        >
-                            <h1>No actuator is available!</h1>
-                        </Box>
-                    </Grid>
-                </Grid>
-            }
             </>
         }
         </>
