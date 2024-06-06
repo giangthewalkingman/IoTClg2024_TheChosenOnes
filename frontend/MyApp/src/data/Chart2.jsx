@@ -41,96 +41,96 @@ const Chart = ({room_id, callbackSetSignIn, timedelay, optionData, apiInformatio
     const get_chart_data = async (node_list_url, chart_url, paraFilter) => 
     {
         try {
-            // const node_list_response = await fetch(node_list_url);
-            // const chart_data_response = await fetch(chart_url);
-            const chart_data_response = [
-                {
-                "humid": 50.3,
-                "id": 12,
-                "pm25": 332,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 25.4,
-                "time": "Wed, 22 May 2024 08:00:00 GMT",
-                "wind": 0.32
-                },
-                {
-                "humid": 51.6,
-                "id": 13,
-                "pm25": 332,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 25.5,
-                "time": "Wed, 22 May 2024 08:05:00 GMT",
-                "wind": 0.33
-                },
-                {
-                "humid": 50.3,
-                "id": 16,
-                "pm25": 325,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 25.8,
-                "time": "Wed, 22 May 2024 08:15:00 GMT",
-                "wind": 0.5
-                },
-                {
-                "humid": 51.5,
-                "id": 17,
-                "pm25": 339,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 26.2,
-                "time": "Wed, 22 May 2024 08:20:00 GMT",
-                "wind": 0.42
-                },
-                {
-                "humid": 50.4,
-                "id": 21,
-                "pm25": 322,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 25.6,
-                "time": "Wed, 22 May 2024 08:10:00 GMT",
-                "wind": 0.42
-                },
-                {
-                "humid": 52.3,
-                "id": 23,
-                "pm25": 338,
-                "sensor_id": 1,
-                "status": 1,
-                "temp": 26.9,
-                "time": "Wed, 22 May 2024 08:25:00 GMT",
-                "wind": 0.94
-                }
-            ];
-            const node_list_response = [
-                {
-                  "room_id": 1,
-                  "sensor_id": 1,
-                  "x_pos": 0.0,
-                  "y_pos": 0.0
-                },
-                {
-                  "room_id": 1,
-                  "sensor_id": 2,
-                  "x_pos": 0.0,
-                  "y_pos": 0.0
-                },
-                {
-                  "room_id": 1,
-                  "sensor_id": 3,
-                  "x_pos": 0.0,
-                  "y_pos": 0.0
-                }
-              ]
-            // if ((node_list_response.status === 200) && (chart_data_response.status === 200)) {   
-            if (1) { 
-            //   const node_list_json = await node_list_response.json();
-            //   const chart_data_json = await chart_data_response.json();
-            const chart_data_json = chart_data_response;
-            const node_list_json = node_list_response;
+            const node_list_response = await fetch(node_list_url);
+            const chart_data_response = await fetch(chart_url);
+            // const chart_data_response = [
+            //     {
+            //     "humid": 50.3,
+            //     "id": 12,
+            //     "pm25": 332,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 25.4,
+            //     "time": "Wed, 22 May 2024 08:00:00 GMT",
+            //     "wind": 0.32
+            //     },
+            //     {
+            //     "humid": 51.6,
+            //     "id": 13,
+            //     "pm25": 332,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 25.5,
+            //     "time": "Wed, 22 May 2024 08:05:00 GMT",
+            //     "wind": 0.33
+            //     },
+            //     {
+            //     "humid": 50.3,
+            //     "id": 16,
+            //     "pm25": 325,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 25.8,
+            //     "time": "Wed, 22 May 2024 08:15:00 GMT",
+            //     "wind": 0.5
+            //     },
+            //     {
+            //     "humid": 51.5,
+            //     "id": 17,
+            //     "pm25": 339,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 26.2,
+            //     "time": "Wed, 22 May 2024 08:20:00 GMT",
+            //     "wind": 0.42
+            //     },
+            //     {
+            //     "humid": 50.4,
+            //     "id": 21,
+            //     "pm25": 322,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 25.6,
+            //     "time": "Wed, 22 May 2024 08:10:00 GMT",
+            //     "wind": 0.42
+            //     },
+            //     {
+            //     "humid": 52.3,
+            //     "id": 23,
+            //     "pm25": 338,
+            //     "sensor_id": 1,
+            //     "status": 1,
+            //     "temp": 26.9,
+            //     "time": "Wed, 22 May 2024 08:25:00 GMT",
+            //     "wind": 0.94
+            //     }
+            // ];
+            // const node_list_response = [
+            //     {
+            //       "room_id": 1,
+            //       "sensor_id": 1,
+            //       "x_pos": 0.0,
+            //       "y_pos": 0.0
+            //     },
+            //     {
+            //       "room_id": 1,
+            //       "sensor_id": 2,
+            //       "x_pos": 0.0,
+            //       "y_pos": 0.0
+            //     },
+            //     {
+            //       "room_id": 1,
+            //       "sensor_id": 3,
+            //       "x_pos": 0.0,
+            //       "y_pos": 0.0
+            //     }
+            //   ]
+            if ((node_list_response.status === 200) && (chart_data_response.status === 200)) {   
+            // if (1) { 
+              const node_list_json = await node_list_response.json();
+              const chart_data_json = await chart_data_response.json();
+            // const chart_data_json = chart_data_response;
+            // const node_list_json = node_list_response;
             if (chart_data_json && node_list_json) {
                 let sortedData = chart_data_json.sort((a, b) => new Date(a.time) - new Date(b.time));
                 let sensor_list = [];
@@ -202,7 +202,7 @@ const Chart = ({room_id, callbackSetSignIn, timedelay, optionData, apiInformatio
                 }, 60000);
                 return () => clearTimeout(timer);
             }
-    },[isLoading, dataChart, sensorID, timeRange])
+    },[isLoading, sensorID, timeRange])
 
     useEffect(() => {
         filter_data(paraFilter);

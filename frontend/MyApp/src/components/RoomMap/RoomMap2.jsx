@@ -27,16 +27,16 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
      *        of it according to the real size of the box it is gonna be rendered, which is    
      *        the "px" from left and the "px" from above.
      *        The image of the room will be positioned so that the main door will facing above,
-     *        the left of the room will be the x_axis and the bottom of the room will be the y_axis.
+     *        the left of the room will be the x_pos and the bottom of the room will be the y_pos.
      *        The array will be like:
      *        [{"node_id": ..., "function": ..., "node_left": ..., "node_above": ...}, ...]
      * 
-     *  node_info -> sensor(array 7) -> x_axis, y_axis, node_id
+     *  node_info -> sensor(array 7) -> x_pos, y_pos, node_id
      */
     const[isLoading, setIsLoading] = useState(false);
     // const api_to_fetch = `http://${backend_host}/api/room/information_tag?room_id=${room_id}`;
-    const heatmap_data_url = `http://${backend_host}/heatmap?room_id=${room_id}/sensor`;
-    const node_position_url = `http://${backend_host}/heatmap?room_id=${room_id}/allnode`;
+    const heatmap_data_url = `http://${backend_host}/heatmap/getlast/${room_id}`;
+    const node_position_url = `http://${backend_host}/heatmap/getPosNode/1`;
 
     const dict_plan = {
         1: plan_409,
@@ -48,81 +48,81 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
     const get_heatmap_data = async (heatmap_url, node_url) =>
     {
         try {
-        // const heatmap_data_response = await fetch(heatmap_url);
-        // const node_position_response = await fetch(node_url);
-        const heatmap_data_response = {
-            'sensor': [
-                {
-                    'sensor_id': 1,
-                    'temp': 24.3,
-                    'x_axis': 10,
-                    'y_axis': 50,
-                },
-                {
-                    'sensor_id': 2,
-                    'temp': 25.3,
-                    'x_axis': 100,
-                    'y_axis': 100,
-                },
-                {
-                    'sensor_id': 3,
-                    'temp': 26.7,
-                    'x_axis': 300,
-                    'y_axis': 400,
-                },
-            ],
-            'room': {
-                'x_length': 300,
-                'y_length': 500,
-            }
-        }
-        const node_position_response = {
-            'sensor': [
-                {
-                    'sensor_id': 1,
-                    'x_axis': 10,
-                    'y_axis': 50,
-                },
-                {
-                    'sensor_id': 2,
-                    'x_axis': 100,
-                    'y_axis': 100,
-                },
-                {
-                    'sensor_id': 3,
-                    'x_axis': 300,
-                    'y_axis': 400,
-                },
-            ],
-            'energy': [{
-                'em_id': 1,
-                'x_axis': 0,
-                'y_axis': 0,
-            },],
-            'fan': [
-                {
-                    'fan_id': 1,
-                    'x_axis': 0,
-                    'y_axis': 500,
-                },
-                {
-                    'fan_id': 2,
-                    'x_axis': 300,
-                    'y_axis': 0,
-                },
-            ],
-            'ac': [{
-                'ac_id': 1,
-                'x_axis': 0,
-                'y_axis': 250,
-            },],
-        }
-        // if ((heatmap_data_response.status === 200) && (node_position_response.status === 200)) {   
-        if (1) {   
-        //   const heatmap_data_json = await heatmap_data_response.json();
-        //   const node_position_json = await node_position_response.json();
-        const heatmap_data_json = heatmap_data_response;
-        const node_position_json = node_position_response;
+        const heatmap_data_response = await fetch(heatmap_url);
+        const node_position_response = await fetch(node_url);
+        // const heatmap_data_response = {
+        //     'sensor': [
+        //         {
+        //             'sensor_id': 1,
+        //             'temp': 24.3,
+        //             'x_pos': 10,
+        //             'y_pos': 50,
+        //         },
+        //         {
+        //             'sensor_id': 2,
+        //             'temp': 25.3,
+        //             'x_pos': 100,
+        //             'y_pos': 100,
+        //         },
+        //         {
+        //             'sensor_id': 3,
+        //             'temp': 26.7,
+        //             'x_pos': 300,
+        //             'y_pos': 400,
+        //         },
+        //     ],
+        //     'room': {
+        //         'x_length': 300,
+        //         'y_length': 500,
+        //     }
+        // }
+        // const node_position_response = {
+        //     'sensor': [
+        //         {
+        //             'sensor_id': 1,
+        //             'x_pos': 10,
+        //             'y_pos': 50,
+        //         },
+        //         {
+        //             'sensor_id': 2,
+        //             'x_pos': 100,
+        //             'y_pos': 100,
+        //         },
+        //         {
+        //             'sensor_id': 3,
+        //             'x_pos': 300,
+        //             'y_pos': 400,
+        //         },
+        //     ],
+        //     'energy': [{
+        //         'em_id': 1,
+        //         'x_pos': 0,
+        //         'y_pos': 0,
+        //     },],
+        //     'fan': [
+        //         {
+        //             'fan_id': 1,
+        //             'x_pos': 0,
+        //             'y_pos': 500,
+        //         },
+        //         {
+        //             'fan_id': 2,
+        //             'x_pos': 300,
+        //             'y_pos': 0,
+        //         },
+        //     ],
+        //     'ac': [{
+        //         'ac_id': 1,
+        //         'x_pos': 0,
+        //         'y_pos': 250,
+        //     },],
+        // }
+        if ((heatmap_data_response.status === 200) && (node_position_response.status === 200)) {   
+        // if (1) {   
+          const heatmap_data_json = await heatmap_data_response.json();
+          const node_position_json = await node_position_response.json();
+        // const heatmap_data_json = heatmap_data_response;
+        // const node_position_json = node_position_response;
           if (heatmap_data_json && node_position_json) {
             let x_length = heatmap_data_json.room.x_length;
             let y_length = heatmap_data_json.room.y_length;
@@ -133,8 +133,8 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
             let ac_pos = [];
             for (let item of heatmap_data_json.sensor) {
                 let newObj = {
-                    x: Math.floor(item.x_axis * map_length.x / x_length),
-                    y: Math.floor(item.y_axis * map_length.y / y_length),
+                    x: Math.floor(item.x_pos * map_length.x / x_length),
+                    y: Math.floor(item.y_pos * map_length.y / y_length),
                     value: Math.round(item.temp),
                     radius: 350,
                 }
@@ -143,32 +143,32 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
             for (let item of node_position_json.sensor) {
                 let newObj = {
                     id: item.sensor_id,
-                    x: Math.floor(item.x_axis * map_length.x / x_length),
-                    y: Math.floor(item.y_axis * map_length.y / y_length),
+                    x: Math.floor(item.x_pos * map_length.x / x_length),
+                    y: Math.floor(item.y_pos * map_length.y / y_length),
                 }
                 sensor_pos.push(newObj);
             }
-            for (let item of node_position_json.energy) {
+            for (let item of node_position_json.em) {
                 let newObj = {
                     id: item.em_id,
-                    x: Math.floor(item.x_axis * map_length.x / x_length),
-                    y: Math.floor(item.y_axis * map_length.y / y_length),
+                    x: Math.floor(item.x_pos * map_length.x / x_length),
+                    y: Math.floor(item.y_pos * map_length.y / y_length),
                 }
                 energy_pos.push(newObj);
             }
             for (let item of node_position_json.fan) {
                 let newObj = {
                     id: item.fan_id,
-                    x: Math.floor(item.x_axis * map_length.x / x_length),
-                    y: Math.floor(item.y_axis * map_length.y / y_length),
+                    x: Math.floor(item.x_pos * map_length.x / x_length),
+                    y: Math.floor(item.y_pos * map_length.y / y_length),
                 }
                 fan_pos.push(newObj);
             }
             for (let item of node_position_json.ac) {
                 let newObj = {
                     id: item.ac_id,
-                    x: Math.floor(item.x_axis * map_length.x / x_length),
-                    y: Math.floor(item.y_axis * map_length.y / y_length),
+                    x: Math.floor(item.x_pos * map_length.x / x_length),
+                    y: Math.floor(item.y_pos * map_length.y / y_length),
                 }
                 ac_pos.push(newObj);
             }
@@ -182,7 +182,7 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
             alert('No heatmap data!');
           }
         } else {
-            if (heatmap_data_response.status !== 200)
+            if (heatmap_data_response.status === 200 && node_position_response.status !== 200)
                 alert(`Cannot call to server! Error code: ${heatmap_data_response.status}`);
             else
                 alert(`Cannot call to server! Error code: ${node_position_response.status}`);

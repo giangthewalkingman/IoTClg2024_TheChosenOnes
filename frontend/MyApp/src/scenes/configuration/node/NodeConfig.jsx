@@ -8,6 +8,7 @@ import NodeChange from './NodeChange';
 import NodeList from './NodeList';
 import RoomMap from '../../../components/RoomMap/RoomMap2';
 import { useTheme } from '@emotion/react';
+import SendKeyConnect from './SendKeyConnect';
 
 export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
     const theme = useTheme();
@@ -44,14 +45,11 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                         <NodeList roomIdForNodeConfig={roomIdForNodeConfig} />
                     </Grid>
                     <Grid item xs={12} lg={3}>
-                        {/* <NodeChange nodeConfigLoading={{0: isLoadingNodeConfig, 1: setIsLoadingNodeConfig}}
-                                roomIdForNodeConfig={roomIdForNodeConfig}
-                                roomSize={roomSize}
-                        /> */}
                         <RoomMap 
                             room_id={roomIdForNodeConfig} backend_host={host} 
                             map_length={map_length} heatMapView={false}
                         />
+                            <SendKeyConnect />
                     </Grid>
                 </Grid>
             </Container>

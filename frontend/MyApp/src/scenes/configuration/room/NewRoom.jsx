@@ -233,7 +233,6 @@ export default function NewRoom({ setDataCreateRoom, dataCreateRoom }) {
                       </Grid>
                       <Grid item xs={6}>
                         <TextField
-                          required
                           id={`x-${index}`}
                           name="x"
                           label="X Position"
@@ -245,7 +244,6 @@ export default function NewRoom({ setDataCreateRoom, dataCreateRoom }) {
                       </Grid>
                       <Grid item xs={6}>
                         <TextField
-                          required
                           id={`y-${index}`}
                           name="y"
                           label="Y Position"
@@ -305,7 +303,7 @@ export default function NewRoom({ setDataCreateRoom, dataCreateRoom }) {
           </Button>
         </DialogActions>
       </Dialog>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
         <Button
           variant="contained"
           sx={{ ml: 1 }}

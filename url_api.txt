@@ -88,7 +88,7 @@ wind: rxs->obs->0->msg->iaqi->w->v
 aqi: rxs->obs->0->msg->aqi
 time: rxs->obs->0->msg->time->s
 - pmv:
-/pmv/env?room_id={room_id}: lấy giá trị met và clo mới nhất
+/pmv/env?room_id={room_id}: lấy giá trị met và clo mới nhất theo room_id
 {
 'met': ..,
 'clo': ...,
@@ -148,6 +148,4 @@ nếu sensor_id và room_id ko khớp trong database thì phải trả về bả
 
 chức năng tạo phòng:
 
-
-Chức năng kiểm tra kết nối (tạm thời bỏ qua)
 Chức năng điều khiển (tạm thời bỏ qua)

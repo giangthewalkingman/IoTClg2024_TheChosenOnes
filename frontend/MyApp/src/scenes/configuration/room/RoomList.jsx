@@ -24,30 +24,30 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
   const get_information_data = async (room_data_url, building_data_url) => 
     {
       try {
-      // const room_data_response = await fetch(room_data_url);
-      // const building_data_response = await fetch(building_data_url);
-      const room_data_response = [
-        {
-          "building_id": 1,
-          "description": "Room 1",
-          "room_id": 1,
-          "x_length": 300.0,
-          "y_length": 500.0
-        }
-      ]
-      const building_data_response = [
-        {
-          "building_id": 1,
-          "location": "Hanoi",
-          "name": "Building 1"
-        }
-      ]
-      // if ((room_data_response.status === 200) && (building_data_response.status === 200)) {   
-      if (1) {   
-      //   const room_data_json_= await room_data_response.json();
-      //   const building_data_json = await building_data_response.json();
-        const room_data_json = room_data_response;
-        const building_data_json = building_data_response;
+      const room_data_response = await fetch(room_data_url);
+      const building_data_response = await fetch(building_data_url);
+    //   const room_data_response = [
+    //     {
+    //       "building_id": 1,
+    //       "description": "Room 1",
+    //       "room_id": 1,
+    //       "x_length": 300.0,
+    //       "y_length": 500.0
+    //     }
+    //   ]
+    //   const building_data_response = [
+    //     {
+    //       "building_id": 1,
+    //       "location": "Hanoi",
+    //       "name": "Building 1"
+    //     }
+    //   ]
+      if ((room_data_response.status === 200) && (building_data_response.status === 200)) {   
+    //   if (1) {   
+        const room_data_json = await room_data_response.json();
+        const building_data_json = await building_data_response.json();
+        // const room_data_json = room_data_response;
+        // const building_data_json = building_data_response;
         if (room_data_json && building_data_json) {
           setRoomData(room_data_json);
           setBuildingData(building_data_json);

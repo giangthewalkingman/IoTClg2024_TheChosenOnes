@@ -17,7 +17,7 @@ const Dashboard = () => {
     const backend_host = host;
     const location = useLocation(); /*!< This is used to get the "state" component that is passed into <Link> */
     const data_passed_from_landingpage = location.state;
-    let room_id = data_passed_from_landingpage == null ? 1 : data_passed_from_landingpage.room_id
+    let room_id = 1;
     const theme = useTheme();
     const map_length = {x: 321.0, y: 351.0};
     const callbackSetSignIn = useContext(UserContext);

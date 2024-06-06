@@ -32,7 +32,7 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 
     const TableContent = ({ node_data, type }) => {
 		if (node_data.length === 0) return (<></>);
-		const props = Object.keys(node_data[0]);
+		const props = Object.keys(node_data[0]).filter(key => (key !== 'x_pos_device' && key !== 'y_pos_device' && key !== 'sensor_link'));
 	
 		return (
 			<Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', boxShadow: 0 }}>
@@ -56,28 +56,6 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 										{row[prop]}
 									</TableCell>
 								))}
-								<TableCell
-									sx={{
-										width: { xs: '100px', sm: '100px', md: '100px', lg: '100px' },
-										'& .MuiInputBase-root': {
-											height: 35
-										},
-									}}
-								>
-									<Button
-										startIcon={<DetailsIcon />}
-										sx={{
-											backgroundColor: '#1976d2',
-											fontSize: '10px',
-											fontWeight: 'bold',
-											padding: '5px 12px',
-											marginRight: '8px',
-										}}
-										variant="contained"
-									>
-										Detail
-									</Button>
-								</TableCell>
 								<TableCell
 									sx={{
 										width: { xs: '100px', sm: '100px', md: '100px', lg: '100px' },
@@ -174,9 +152,11 @@ const NodeList = ({ roomIdForNodeConfig }) => {
                         "x_pos": 20,
                         "y_pos": 400,
                         "model": "manual",
-                        "sensor_link": [],
-                        "x_pos_device": [],
-                        "y_pos_device": [],
+                        'num_device': 0,
+                        'num_sensor_link': 1,
+                        "sensor_link": '',
+                        "x_pos_device": '',
+                        "y_pos_device": '',
                     },
                     {
                         "fan_id": 2,
@@ -185,18 +165,22 @@ const NodeList = ({ roomIdForNodeConfig }) => {
                         "x_pos": -1,
                         "y_pos": -1,
                         "model": "manual",
-                        "sensor_link": [],
-                        "x_pos_device": [],
-                        "y_pos_device": [],
+                        'num_sensor_link': 1,
+                        'num_device': 0,
+                        "sensor_link": '',
+                        "x_pos_device": '',
+                        "y_pos_device": '',
                     }
                 ],
                 'ac': [
                     {
                         "ac_id": 1, "room_id": 1, "x_pos": -1, "y_pos": -1, "gateway_id": 1,
                         "model": "manual",
-                        "sensor_link": [],
-                        "x_pos_device": [],
-                        "y_pos_device": [],
+                        'num_device': 0,
+                        'num_sensor_link': 1,
+                        "sensor_link": '',
+                        "x_pos_device": '',
+                        "y_pos_device": '',
                     }
                 ],
                 'gateway': [

@@ -21,7 +21,7 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
         handleClose();
     };
 
-    const editableFields = Object.keys(nodeData).filter(key => key !== 'room_id' && key !== 'gateway_id');
+    const editableFields = Object.keys(nodeData)
 
     return (
         <Backdrop
@@ -33,36 +33,27 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
                     Edit {type} Node
                 </Typography>
                 <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="room_id"
-                            name="room_id"
-                            label="Room ID"
-                            fullWidth
-                            variant="standard"
-                            value={formData.room_id}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            required
-                            id="gateway_id"
-                            name="gateway_id"
-                            label="Gateway ID"
-                            fullWidth
-                            variant="standard"
-                            value={formData.gateway_id}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                        />
-                    </Grid>
-                    {editableFields.map((field) => (
-                        <Grid item xs={12} sm={6} key={field}>
+                    {editableFields.map((field) => {
+                        if (field === 'room_id' || field === 'gateway_id') return (
+                            <Grid item xs={12} sm={6} key={field}>
+                            <TextField
+                                required
+                                id={field}
+                                name={field}
+                                label={field.replace('_', ' ').toUpperCase()}
+                                fullWidth
+                                variant="standard"
+                                value={formData[field]}
+                                onChange={handleInputChange}
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                            />
+                        </Grid>
+                        )
+                        else if (field !== 'num_device' && field !== 'num_sensor_link')
+                        return (
+                            <Grid item xs={12} sm={6} key={field}>
                             <TextField
                                 required
                                 id={field}
@@ -74,7 +65,8 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
                                 onChange={handleInputChange}
                             />
                         </Grid>
-                    ))}
+                        )
+                    })}
                 </Grid>
                 <Grid container spacing={2} justifyContent="flex-end" mt={2}>
                     <Grid item>

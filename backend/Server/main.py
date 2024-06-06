@@ -1444,44 +1444,44 @@ def get_pos_nodes_headmap(room_id):
 
     return jsonify(result), 200
 
-@app.route('/heatmap/getPosNode/<room_id>', methods=['GET'])
-def get_pos_nodes_headmap(room_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
+# @app.route('/heatmap/getPosNode/<room_id>', methods=['GET'])
+# def get_pos_nodes_headmap(room_id):
+#     db = create_connection()
+#     if db is None:
+#         return jsonify({"error": "Unable to connect to database"}), 500
 
-    cursor = db.cursor(dictionary=True)
+#     cursor = db.cursor(dictionary=True)
 
-    result = {
-        'sensor': [],
-        'em': [],
-        'fan': [],
-        'ac': []
-    }
+#     result = {
+#         'sensor': [],
+#         'em': [],
+#         'fan': [],
+#         'ac': []
+#     }
 
-    try:
-        # Lấy thông tin các sensor nodes
-        cursor.execute("SELECT sensor_id, x_pos, y_pos FROM registration_sensor WHERE room_id = %s", (room_id,))
-        result['sensor'] = cursor.fetchall()
+#     try:
+#         # Lấy thông tin các sensor nodes
+#         cursor.execute("SELECT sensor_id, x_pos, y_pos FROM registration_sensor WHERE room_id = %s", (room_id,))
+#         result['sensor'] = cursor.fetchall()
 
-        # Lấy thông tin các em
-        cursor.execute("SELECT em_id, x_pos, y_pos FROM registration_em WHERE room_id = %s", (room_id,))
-        result['em'] = cursor.fetchall()
+#         # Lấy thông tin các em
+#         cursor.execute("SELECT em_id, x_pos, y_pos FROM registration_em WHERE room_id = %s", (room_id,))
+#         result['em'] = cursor.fetchall()
 
-        # Lấy thông tin các fan
-        cursor.execute("SELECT fan_id, x_pos, y_pos FROM registration_fan WHERE room_id = %s", (room_id,))
-        result['fan'] = cursor.fetchall()
+#         # Lấy thông tin các fan
+#         cursor.execute("SELECT fan_id, x_pos, y_pos FROM registration_fan WHERE room_id = %s", (room_id,))
+#         result['fan'] = cursor.fetchall()
 
-        # Lấy thông tin các ac
-        cursor.execute("SELECT ac_id, x_pos, y_pos FROM registration_ac WHERE room_id = %s", (room_id,))
-        result['ac'] = cursor.fetchall()
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        cursor.close()
-        db.close()
+#         # Lấy thông tin các ac
+#         cursor.execute("SELECT ac_id, x_pos, y_pos FROM registration_ac WHERE room_id = %s", (room_id,))
+#         result['ac'] = cursor.fetchall()
+#     except Error as e:
+#         return jsonify({"error": str(e)}), 500
+#     finally:
+#         cursor.close()
+#         db.close()
 
-    return jsonify(result), 200
+#     return jsonify(result), 200
 
 @app.route('/ac_device/getall', methods=['GET'])
 def get_all_ac_device():

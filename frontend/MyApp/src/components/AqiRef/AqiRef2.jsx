@@ -9,7 +9,7 @@ import convertTime from "../../data/TimeConvert";
 
 export default function AqiRef({callbackSetSignIn, time_delay})
 {
-    const url = `http://${host}/localweather/get`;
+    const url = `http://${host}/local_weather/getlast`;
     const theme = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -28,44 +28,42 @@ export default function AqiRef({callbackSetSignIn, time_delay})
     const get_local_weather = async (url) =>
     {
         try {
-            // const data_response = await fetch(url);
-            const data_response = [
-                {
-                    'temp': 24.3,
-                    'humid': 70,
-                    'wind': 4.3,
-                    'aqi': 66,
-                    'time': 'Fri, 24 May 2024 18:00:00',
-                }
-            ];
+            const data_response = await fetch(url);
+            // const data_response = [
+            //     {
+            //         'temp': 24.3,
+            //         'humid': 70,
+            //         'wind': 4.3,
+            //         'aqi': 66,
+            //         'time': 'Fri, 24 May 2024 18:00:00',
+            //     }
+            // ];
             // const props = Object.keys(data_response);
-            // if (data_response.status === 200) {   
-            if (1) {   
-            //   const data_json = await data_response.json();
-              const data_json = data_response;
+            if (data_response.status === 200) {   
+            // if (1) {   
+              const data_json = await data_response.json();
+            //   const data_json = data_response;
               if (data_json) {
-                for (let item of data_json) {
-                    item.time = convertTime(item.time)
-                    if (item.aqi <= 50) {
-                      item.rating = rating_index[1]['level'];
-                      item.color = rating_index[1]['colour'];
-                    } else if (item.aqi <= 100) {
-                      item.rating = rating_index[2]['level'];
-                      item.color = rating_index[2]['colour'];
-                    } else if (item.aqi <= 150) {
-                        item.rating = rating_index[3]['level'];
-                        item.color = rating_index[3]['colour'];
-                    } else if (item.aqi <= 200) {
-                        item.rating = rating_index[4]['level'];
-                        item.color = rating_index[4]['colour'];
-                    } else if (item.aqi <= 300) {
-                        item.rating = rating_index[5]['level'];
-                        item.color = rating_index[5]['colour'];
-                    } else {
-                        item.rating = rating_index[6]['level'];
-                        item.color = rating_index[6]['colour'];
-                    }
-                }
+                data_json.time = convertTime(data_json.time)
+								if (data_json.aqi <= 50) {
+									data_json.rating = rating_index[1]['level'];
+									data_json.color = rating_index[1]['colour'];
+								} else if (data_json.aqi <= 100) {
+									data_json.rating = rating_index[2]['level'];
+									data_json.color = rating_index[2]['colour'];
+								} else if (data_json.aqi <= 150) {
+										data_json.rating = rating_index[3]['level'];
+										data_json.color = rating_index[3]['colour'];
+								} else if (data_json.aqi <= 200) {
+										data_json.rating = rating_index[4]['level'];
+										data_json.color = rating_index[4]['colour'];
+								} else if (data_json.aqi <= 300) {
+										data_json.rating = rating_index[5]['level'];
+										data_json.color = rating_index[5]['colour'];
+								} else {
+										data_json.rating = rating_index[6]['level'];
+										data_json.color = rating_index[6]['colour'];
+								}
                 setData(data_json);
                 setIsLoading(false);
               } else {
@@ -115,7 +113,7 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                                         width: '100px', // Adjust as needed
                                         height: '100px', // Adjust as needed
                                         border: '10px solid', // Border makes the circle hollow
-                                        borderColor: `${data[0]['color']}`,
+                                        borderColor: `${data['color']}`,
                                         borderRadius: '50%', // Makes the div a circle
                                         display: 'flex',
                                         justifyContent: 'center',
@@ -129,13 +127,13 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                                             fontSize: '28px',
                                             fontWeight: 'bold'
                                         }}>
-                                            {data[0]['aqi']}
+                                            {data['aqi']}
                                         </span>
                                     </div>
                                 </Grid>
                                 <Grid item marginY={0.5} />
                                 <Grid item>
-                                    <Typography fontWeight='bold' variant='h3'>{data[0]['rating']}</Typography>
+                                    <Typography fontWeight='bold' variant='h3'>{data['rating']}</Typography>
                                 </Grid>
                             </Grid>
                         </Paper>
@@ -152,8 +150,8 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                                     <Typography textAlign='center' variant='h5'>Temperature</Typography>
                                     <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                         {((temp) => {
-                                        if (data[0]['temp'] == 'No data') temp = data[0]['temp'];
-                                        else temp = `${data[0]['temp']} °C`
+                                        if (data['temp'] == 'No data') temp = data['temp'];
+                                        else temp = `${data['temp']} °C`
                                         return temp;
                                     })()}
                                     </Typography>
@@ -173,8 +171,8 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                                     <Typography textAlign='center' variant='h5'>Humidity</Typography>
                                     <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                     {((temp) => {
-                                        if (data[0]['humid'] == 'No data') temp = data[0]['humid'];
-                                        else temp = `${data[0]['humid']} %`
+                                        if (data['humid'] == 'No data') temp = data['humid'];
+                                        else temp = `${data['humid']} %`
                                         return temp;
                                     })()}                                    </Typography>
                                 </Grid>
@@ -193,8 +191,8 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                                     <Typography textAlign='center' variant='h5'>Wind speed</Typography>
                                     <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                     {((temp) => {
-                                        if (data[0]['wind'] == 'No data') temp = data[0]['wind'];
-                                        else temp = `${data[0]['wind']} m/s`
+                                        if (data['wind'] == 'No data') temp = data['wind'];
+                                        else temp = `${data['wind']} m/s`
                                         return temp;
                                     })()}
                                     </Typography>
@@ -205,7 +203,7 @@ export default function AqiRef({callbackSetSignIn, time_delay})
                     </Grid>
                 </Grid>
                 <Grid xs={12} textAlign='center' margin={1}>
-                    <Typography textAlign='center' variant='h5' component='span'>updated on {`${data[0].time} `}
+                    <Typography textAlign='center' variant='h5' component='span'>updated on {`${data.time} `}
                     </Typography>
                     <Typography variant='h5' component='a' color='darkgray' href="https://aqicn.org/city/vietnam/hanoi/">https://aqicn.org/city/vietnam/hanoi/</Typography>
                 </Grid>
