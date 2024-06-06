@@ -1,3 +1,5 @@
+import json
+import threading
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process
@@ -8,6 +10,7 @@ from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
+import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +29,43 @@ def create_connection():
     except Error as e:
         print("Error while connecting to MySQL:", e)
         return None
+
+# init mqtt
+mqtt_broker = 'test.mosquitto.org' # address broker
+mqtt_port = 1883
+mqtt_topic_connect_key = 'gateway/connect_key'
+mqtt_topic_connect_key_ack = 'server/connect_key_ack'
+
+# MQTT Callbacks
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    client.subscribe(mqtt_topic_connect_key_ack)
+
+def on_message(client, userdata, msg):
+    print(msg.topic + " " + str(msg.payload))
+    if msg.topic == mqtt_topic_connect_key_ack:
+        handle_ack(json.loads(msg.payload))
+
+# Connect MQTT
+def connect_mqtt():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(mqtt_broker, mqtt_port, 60)
+    return client
+
+mqtt_client = connect_mqtt()
+
+ack_received = threading.Event()
+ack_info = None
+
+def handle_ack(message):
+    global ack_info
+    ack_info = message
+    ack_received.set()
+
+def run_mqtt_client():
+    mqtt_client.loop_forever()
 
 @app.route('/')
 def home():
@@ -1292,6 +1332,7 @@ def insert_pmv():
 
     return jsonify({"message": "pmv added successfully"}), 201  # 201 (Created)
 
+#pmv
 @app.route('/pmv/getall', methods=['GET'])
 def get_all_pmv():
     db = create_connection()
@@ -1333,6 +1374,31 @@ def get_max_env_values():
 
     return jsonify(max_env_values), 200
 
+@app.route('/pmv/env/<room_id>', methods=['GET'])
+def get_env_values_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(met), MAX(clo) FROM pmv_table where room_id = %s", (room_id,))
+    max_values = cursor.fetchone()
+
+    if max_values is None:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No data available"}), 404
+
+    max_env_values = {
+        'max_met': max_values[0],
+        'max_clo': max_values[1]
+    }
+
+    cursor.close()
+    db.close()
+
+    return jsonify(max_env_values), 200
+
 @app.route('/pmv/getfull/<room_id>/<sensor_id>', methods=['GET'])
 def getfull_pmv(room_id, sensor_id):
     db = create_connection()
@@ -1355,6 +1421,7 @@ def getfull_pmv(room_id, sensor_id):
 
     return jsonify(result), 200
 
+#heatmap
 @app.route('/heatmap/getlast/<room_id>', methods=['GET'])
 def getlast_heatmap(room_id):
     db = create_connection()
@@ -1444,44 +1511,165 @@ def get_pos_nodes_headmap(room_id):
 
     return jsonify(result), 200
 
-# @app.route('/heatmap/getPosNode/<room_id>', methods=['GET'])
-# def get_pos_nodes_headmap(room_id):
-#     db = create_connection()
-#     if db is None:
-#         return jsonify({"error": "Unable to connect to database"}), 500
+# registration_gateway
+@app.route('/registration_gateway/getall', methods=['GET'])
+def get_all_gateway():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
 
-#     cursor = db.cursor(dictionary=True)
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_gateway")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
-#     result = {
-#         'sensor': [],
-#         'em': [],
-#         'fan': [],
-#         'ac': []
-#     }
+    cursor.close()
+    db.close()
 
-#     try:
-#         # Lấy thông tin các sensor nodes
-#         cursor.execute("SELECT sensor_id, x_pos, y_pos FROM registration_sensor WHERE room_id = %s", (room_id,))
-#         result['sensor'] = cursor.fetchall()
+    return jsonify(result), 200  # 200 (OK)
 
-#         # Lấy thông tin các em
-#         cursor.execute("SELECT em_id, x_pos, y_pos FROM registration_em WHERE room_id = %s", (room_id,))
-#         result['em'] = cursor.fetchall()
+@app.route('/registration_gateway/getByRoomId<room_id>', methods=['GET'])
+def get_gateway_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
 
-#         # Lấy thông tin các fan
-#         cursor.execute("SELECT fan_id, x_pos, y_pos FROM registration_fan WHERE room_id = %s", (room_id,))
-#         result['fan'] = cursor.fetchall()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM registration_gateway where room_id = %s", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
-#         # Lấy thông tin các ac
-#         cursor.execute("SELECT ac_id, x_pos, y_pos FROM registration_ac WHERE room_id = %s", (room_id,))
-#         result['ac'] = cursor.fetchall()
-#     except Error as e:
-#         return jsonify({"error": str(e)}), 500
-#     finally:
-#         cursor.close()
-#         db.close()
+    cursor.close()
+    db.close()
 
-#     return jsonify(result), 200
+    return jsonify(result), 200  # 200 (OK)
+
+@app.route('/registration_gateway/insert', methods=['POST'])
+def insert_gateway():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    room_id = request.json.get('room_id')
+    connected = request.json.get('connected')
+    mac = request.json.get('mac')
+    description = request.json.get('description')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
+
+    # Kiểm tra xem các trường bắt buộc có tồn tại và có kiểu dữ liệu hợp lệ không
+    if any(v is None for v in (room_id, connected, mac, description, x_pos, y_pos)):
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    try:
+        # Thêm dữ liệu vào bảng pmv_table
+        query = ("INSERT INTO registration_gateway (room_id, connected, mac, description, x_pos, y_pos) "
+                 "VALUES (%s, %s, %s, %s, %s, %s)")
+        cursor.execute(query, (room_id, connected, mac, description, x_pos, y_pos))
+        db.commit()
+    except mysql.connector.Error as err:
+        db.rollback()
+        return jsonify({"error": str(err)}), 500
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify({"message": "gateway added successfully"}), 201  # 201 (Created)
+
+@app.route('/registration_gateway/update/<room_id>/<gateway_id>', methods=['PUT'])
+def update_gateway(room_id, gateway_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    connected = request.json.get('connected')
+    mac = request.json.get('mac')
+    description = request.json.get('description')
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
+
+    update_values = []
+    query_parts = []
+
+    if connected:
+        query_parts.append("connected = %s")
+        update_values.append(connected)
+
+    if mac:
+        query_parts.append("mac = %s")
+        update_values.append(mac)
+
+    if description:
+        query_parts.append("description = %s")
+        update_values.append(description)
+
+    if x_pos:
+        query_parts.append("x_pos = %s")
+        update_values.append(x_pos)
+
+    if y_pos:
+        query_parts.append("y_pos = %s")
+        update_values.append(y_pos)
+
+    if not query_parts:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
+
+    # Cập nhật dựa trên room_id và ac_id hiện tại
+    query = f"UPDATE registration_gateway SET {', '.join(query_parts)} WHERE room_id = %s AND gateway_id = %s"
+    update_values.extend([room_id, gateway_id])
+
+    try:
+        cursor.execute(query, tuple(update_values))
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        return jsonify({"message": "Registration gateway updated successfully"}), 200  # 200 (OK)
+
+    except Error as e:
+        print("Error during update:", e)  # Ghi lại lỗi
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Failed to update Registration gateway"}), 500
+
+@app.route('/registration_gateway/delete/<room_id>/<gateway_id>', methods=['DELETE'])
+def delete_registration_gateway(room_id, gateway_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM registration_gateway WHERE room_id = %s AND gateway_id = %s", (room_id, gateway_id))
+        record = cursor.fetchone()
+
+        if not record:
+            cursor.close()
+            db.close()
+            return jsonify({"error": "Registration gateway not found"}), 404  # Nếu không tìm thấy bản ghi
+
+        # Xóa bản ghi nếu tồn tại
+        cursor.execute("DELETE FROM registration_gateway WHERE room_id = %s AND gateway_id = %s", (room_id, gateway_id))
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        return jsonify({"message": "Registration gateway deleted successfully"}), 204  # 204 (No Content)
+
+    except Error as e:
+        print("Error during deletion:", e)  # Xử lý ngoại lệ
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Failed to delete registration gateway"}), 500  # Lỗi máy chủ nội bộ
 
 @app.route('/ac_device/getall', methods=['GET'])
 def get_all_ac_device():
@@ -1704,8 +1892,7 @@ def update_fan_device(fan_id):
         db.close()
         return jsonify({"error": "Failed to update fan_device"}), 500
 
-
-@app.route('/fan_device/delete/<fan_id>', methods=['DELETE'])  # Đảm bảo đúng kiểu dữ liệu
+@app.route('/fan_device/delete/<fan_id>', methods=['DELETE'])
 def delete_fan_device(fan_id):
     db = create_connection()
     if db is None:
@@ -1738,8 +1925,63 @@ def delete_fan_device(fan_id):
         db.close()
         return jsonify({"error": "Failed to delete fan_device", "details": str(e)}), 500
 
+@app.route('/connect_key', methods=['GET'])
+def connect_key():
+    data = request.json
+    connect_key = data.get('connect_key')
+    type_node = data.get('type_node')
+    gateway_id = data.get('gateway_id', -1)
+    mac = data.get('mac', '')
+
+    if not connect_key or not type_node:
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Internal Server Error
+
+    cursor = db.cursor(dictionary=True)
+
+    if gateway_id != -1:
+        cursor.execute("SELECT * FROM registration_gateway WHERE gateway_id = %s", (gateway_id,))
+    else:
+        cursor.execute("SELECT * FROM registration_gateway WHERE mac = %s", (mac,))
+
+    gateway = cursor.fetchone()
+
+    if not gateway:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Gateway not found"}), 500  # Internal Server Error
+
+    cursor.close()
+    db.close()
+
+    # Prepare MQTT message
+    mqtt_message = {
+        "operator": "connect_key",
+        "status": 1,
+        "info": {
+            "mac": gateway['mac'],
+            "connect_key": connect_key,
+            "type_node": type_node
+        }
+    }
+
+    ack_received.clear()
+    mqtt_client.publish(mqtt_topic_connect_key, json.dumps(mqtt_message))
+
+    # Wait for ack
+    if not ack_received.wait(timeout=300):  # 5 minutes timeout
+        return jsonify({"error": "No ack received from gateway"}), 504  # Gateway Timeout
+
+    return jsonify({"message": "Install code sent to gateway", "ack": ack_info}), 200  # OK
+
 if __name__ == '__main__':
     weather_process = Process(target=schedule_weather_insert)
     weather_process.start()
+
+    mqtt_thread = threading.Thread(target=run_mqtt_client)
+    mqtt_thread.start()
 
     app.run(debug=True)
