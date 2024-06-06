@@ -11,7 +11,7 @@ import HeatmapComponent from "./HeatmapComponent";
  *          sticks to it in real position according to the x and y axises provided
  *          in database backend.
  */
-const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapView}) => 
+const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapView, nodeSize}) => 
 {
     const [heatMapData, setHeatMapData] = useState({'sensor' : null, 'room': null});
     const [sensorPos, setSensorPos] = useState([]);
@@ -228,14 +228,25 @@ const RoomMap = ({room_id, callbackSetSignIn, backend_host, map_length, heatMapV
                         pic_src={dict_plan[1]}
                         showHeatmap={showHeatmap}
                         map_length={map_length}
+                        size={nodeSize}
                     />
                 </Grid>
                 <Grid item container justifyContent='center' xs={12} marginY={3}>
-                    <Button size="large" variant='outlined' sx={{borderColor: theme.palette.text.primary}}
+                    <Button
+                     sx={{
+                        "min-width": "30px",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                      }}
+                      style={{
+                        borderColor: theme.palette.text.primary,
+                        color: theme.palette.text.primary,
+                      }}
+                      variant="outlined"
                         onClick={() => {
                             setShowHeatmap(!showHeatmap);
                         }}>
-                        <Typography variant='h4' fontWeight='bold' color={theme.palette.text.primary}>
+                        <Typography fontSize='20px' fontWeight='bold' color={theme.palette.text.primary}>
                             {showHeatmap ? 'Heatmap OFF' : 'Heatmap ON'}
                         </Typography>
                     </Button>

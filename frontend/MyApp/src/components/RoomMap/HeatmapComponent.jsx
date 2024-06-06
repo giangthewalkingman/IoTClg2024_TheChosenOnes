@@ -7,8 +7,23 @@ import SensorsIcon from '@mui/icons-material/Sensors';
 import AirIcon from '@mui/icons-material/Air';
 import WindPowerIcon from '@mui/icons-material/WindPower';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
+import { useTheme } from '@emotion/react';
 
-const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pic_src, showHeatmap, map_length}) => {
+const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pic_src, showHeatmap, map_length, size}) => {
+  const [buttonSize, setButtonSize] = useState('');
+  useEffect(() => {
+    if (size === 'extra_large')
+      setButtonSize('4rem') 
+    else if (size === 'large')
+      setButtonSize('3.5rem') 
+    else if (size === 'medium')
+      setButtonSize('3rem') 
+    else if (size === 'small')
+      setButtonSize('2.5rem') 
+    else if (size === 'extra_small')
+      setButtonSize('2rem') 
+  },[size])
+  
   const HeatmapContainer = styled('div')({
     position: 'relative',
     width: map_length.x,
@@ -38,7 +53,7 @@ const HeatmapComponent = ({heatMapData, sensorPos, energyPos, fanPos, airPos, pi
     border: '1px solid', // Add border to create an outlined effect
     borderRadius: '50%', // Ensure the button is circular
     padding: '8px', // Add padding to adjust the size of the button as needed
-    fontSize: '3rem',
+    fontSize: buttonSize,
     position: 'absolute',
     '& .MuiButton-startIcon': {
       position: 'relative',

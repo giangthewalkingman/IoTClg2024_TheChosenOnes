@@ -122,7 +122,7 @@ const Dashboard = () => {
                     >
                         <RoomMap 
                             room_id={room_id} callbackSetSignIn={callbackSetSignIn} backend_host={host}
-                            map_length={map_length} heatMapView={true}
+                            map_length={map_length} heatMapView={true} nodeSize='small'
                         />
                     </Box>
                 </Grid>
