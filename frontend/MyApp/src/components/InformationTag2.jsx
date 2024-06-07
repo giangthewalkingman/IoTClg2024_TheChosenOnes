@@ -27,8 +27,8 @@ import convertTime from '../data/TimeConvert';
 const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuatorInfoOfRoom}) => {
     const theme = useTheme();
 
-    const sensor_data_url = `http://${host}/sensor_node/realtime?room_id=${room_id}`;
-    const pmv_data_url = `http://${host}/pmv/env?room_id=${room_id}`
+    const sensor_data_url = `http://${host}/sensor_node/getByRoomId/${room_id}`;
+    const pmv_data_url = `http://${host}/pmv/env/${room_id}`
     
     const [nodeID, setNodeID] = useState(null);
     const [nodeIDlist, setNodeIDlist] = useState(null);
@@ -187,7 +187,7 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
                                     <Grid item>
                                         <Typography textAlign='center' variant='h5'>Metabolic rate</Typography>
                                         <Typography textAlign='center' fontWeight='bold' variant='h3'>
-                                            {pmvData['met']}
+                                            {pmvData['max_met']}
                                         </Typography>
                                     </Grid>
                               </Grid>
@@ -204,7 +204,7 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
                                     <Grid item>
                                         <Typography textAlign='center' variant='h5'>Clothing insulation</Typography>
                                         <Typography textAlign='center' fontWeight='bold' variant='h3'>
-                                        {pmvData['clo']}
+                                        {pmvData['max_clo']}
                                         </Typography>
                                     </Grid>
                               </Grid>
@@ -225,44 +225,44 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
     const get_information_data = async (sensor_url, pmv_url) => 
     {
         try {
-            // const sensor_data_response = await fetch(sensor_url);
-            // const pmv_data_response = await fetch(pmv_url);
-            const sensor_data_response = [
-                {
-                    'sensor_id': 1,
-                    'temp': 24.3,
-                    'humid': 70,
-                    'wind': 4.3,
-                    'pm25': 32,
-                    'time': '2024-05-24 18:00:00',
-                },
-                {
-                    'sensor_id': 2,
-                    'temp': 25.3,
-                    'humid': 60,
-                    'wind': 4.5,
-                    'pm25': 42,
-                    'time': '2024-05-24 18:15:00',
-                },
-                {
-                    'sensor_id': 3,
-                    'temp': 26.7,
-                    'humid': 50,
-                    'wind': 1.2,
-                    'pm25': 12,
-                    'time': '2024-05-24 18:30:00',
-                }
-            ];
-            const pmv_data_response = {
-                'met': 1.1,
-                'clo': 0.6,
-            }
-            // if ((sensor_data_response.status === 200) && (pmv_data_response.status === 200)) {   
-            if (1) {   
-            //   const sensor_data_json_= await sensor_data_response.json();
-            //   const pmv_data_json = await pmv_data_response.json();
-              const sensor_data_json = sensor_data_response;
-              const pmv_data_json = pmv_data_response;
+            const sensor_data_response = await fetch(sensor_url);
+            const pmv_data_response = await fetch(pmv_url);
+            // const sensor_data_response = [
+            //     {
+            //         'sensor_id': 1,
+            //         'temp': 24.3,
+            //         'humid': 70,
+            //         'wind': 4.3,
+            //         'pm25': 32,
+            //         'time': '2024-05-24 18:00:00',
+            //     },
+            //     {
+            //         'sensor_id': 2,
+            //         'temp': 25.3,
+            //         'humid': 60,
+            //         'wind': 4.5,
+            //         'pm25': 42,
+            //         'time': '2024-05-24 18:15:00',
+            //     },
+            //     {
+            //         'sensor_id': 3,
+            //         'temp': 26.7,
+            //         'humid': 50,
+            //         'wind': 1.2,
+            //         'pm25': 12,
+            //         'time': '2024-05-24 18:30:00',
+            //     }
+            // ];
+            // const pmv_data_response = {
+            //     'max_met': 1.1,
+            //     'max_clo': 0.6,
+            // }
+            if ((sensor_data_response.status === 200) && (pmv_data_response.status === 200)) {   
+            // if (1) {   
+              const sensor_data_json = await sensor_data_response.json();
+              const pmv_data_json = await pmv_data_response.json();
+            //   const sensor_data_json = sensor_data_response;
+            //   const pmv_data_json = pmv_data_response;
               if (sensor_data_json && pmv_data_json) {
                 let id_list = [];
                 for (let item of sensor_data_json) {

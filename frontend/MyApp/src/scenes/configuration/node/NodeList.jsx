@@ -5,7 +5,6 @@ import { host } from '../../../App';
 import SettingNode from './SettingNode';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
-import DetailsIcon from '@mui/icons-material/Details';
 
 const NodeList = ({ roomIdForNodeConfig }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -218,7 +217,7 @@ const NodeList = ({ roomIdForNodeConfig }) => {
     }, [])
 
     return (
-        <Grid container sx={{ display: 'flex', flexDirection: 'column', overflow: 'auto', }} display='flex' spacing={2} m={0}>
+        <Grid container sx={{ display: 'flex', flexDirection: 'column', overflow: 'auto', }} display='flex' rowSpacing={2}>
             <Grid item xs={12}>
                 <TableContent node_data={gatewayData} type='gateways' />
             </Grid>

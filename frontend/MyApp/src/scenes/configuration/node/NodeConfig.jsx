@@ -39,8 +39,8 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                 >
                     Go Back
                 </Button>
-                <Grid container spacing={2}>
-                    <Grid container item xs={12} lg={3} spacing={2} display='flow-root'>
+                <Grid container display='flex' spacing={2}>
+                    <Grid container item xs={12} lg={3} rowSpacing={2} display='flow-root'>
                         <Grid item>
                             <Box 
                                 sx={{boxShadow: 0,

@@ -265,6 +265,7 @@ def room_get_by_id(room_id):
 def insertRoom():
     db = create_connection()
     if db is None:
+        print('HEHEHEHEHHEHEHEHE')
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()

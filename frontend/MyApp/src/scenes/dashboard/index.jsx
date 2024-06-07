@@ -66,7 +66,7 @@ const Dashboard = () => {
                             width="100%" height="100%" display="flex"
                             flexDirection="column" alignContent="center" justifyContent="center"
                         >
-                            <AqiRef callbackSetSignIn={callbackSetSignIn} time_delay={5000}/>
+                            <AqiRef callbackSetSignIn={callbackSetSignIn} time_delay={60000}/>
                         </Box>
                         <Box 
                             sx={{boxShadow: 0,
@@ -80,7 +80,7 @@ const Dashboard = () => {
                             justify="center"
                             marginTop={2}
                         >
-                            <Energy room_id={room_id} callbackSetSignIn={callbackSetSignIn} time_delay={5000} backend_host={backend_host} />  
+                            <Energy room_id={room_id} callbackSetSignIn={callbackSetSignIn} time_delay={60000} backend_host={backend_host} />  
                         </Box>
                     </Box>
                 </Grid>
@@ -97,7 +97,7 @@ const Dashboard = () => {
                         <InformationTag 
                             url={apiInformationTag} 
                             callbackSetSignIn={callbackSetSignIn} 
-                            time_delay={5000}
+                            time_delay={60000}
                             room_id={room_id}
                             setActuatorInfoOfRoom={setActuatorInfoOfRoom}
                         />

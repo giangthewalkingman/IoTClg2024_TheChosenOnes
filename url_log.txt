@@ -1,0 +1,90 @@
+http://localhost:5000/sensor_node/getByRoomId/<room_id>: trả dữ liệu sai khi thử với room_id khác 1
+http://localhost:5000/room/insert:
+- khi thêm thì room_id tự tăng chứ không theo room_id ngừoi dùng
+- mỗi khi thêm, phải kiểm tra room_id có bị trùng vói room_id có sẵn hay không 
+http://localhost:5000/pmv/env/<room_id>: lấy theo giá trị mới nhất chứ không lấy theo max
+chưa có fan/getlast/<room_id> và air_conditioner/getlast/<room_id>
+thêm api /node/getall/<room_id>: lấy tất cả dữ liẹu registration của các node trong room_id
+- kiểu dữ liệu trả về:
+{
+    'sensor': [....],
+    'em': [],
+    'fan': [],
+    'ac': [],
+    'gateway': [],
+}
+- ví dụ: /node/getall/1
+{
+	'sensor': [
+	    {
+		"room_id": 1,
+		"gateway_id": 1,
+		"sensor_id": 1,
+		"x_pos": 100,
+		"y_pos": 100,
+	    },
+	    {
+		"room_id": 1,
+		"sensor_id": 2,
+		"gateway_id": 2,
+		"x_pos": 50,
+		"y_pos": 200,
+	    },
+	    {
+		"room_id": 1,
+		"sensor_id": 3,
+		"gateway_id": 1,
+		"x_pos": -1,
+		"y_pos": -1,
+	    }
+	],
+	'energy': [
+	    {
+		"em_id": 1,
+		"room_id": 1,
+		"gateway_id": 1,
+		"x_pos": 0,
+		"y_pos": 0,
+	    }
+	],
+	'fan': [
+	    {
+		"fan_id": 1,
+		"room_id": 1,
+		"gateway_id": 1,
+		"x_pos": 20,
+		"y_pos": 400,
+		"model": "manual",
+		"sensor_link": '',
+		"x_pos_device": '',
+		"y_pos_device": '',
+	    },
+	    {
+		"fan_id": 2,
+		"room_id": 1,
+		"gateway_id": 1,
+		"x_pos": -1,
+		"y_pos": -1,
+		"model": "manual",
+		"sensor_link": '',
+		"x_pos_device": '',
+		"y_pos_device": '',
+	    }
+	],
+	'ac': [
+	    {
+		"ac_id": 1, "room_id": 1, "x_pos": -1, "y_pos": -1, "gateway_id": 1,
+		"model": "manual",
+		"sensor_link": '',
+		"x_pos_device": '',
+		"y_pos_device": '',
+	    }
+	],
+	'gateway': [
+	    {
+		'gateway_id': 1,
+		'x_pos': 100, 'y_pos': 100,
+		'description': 'Gateway 1',
+	    }
+	]
+};
