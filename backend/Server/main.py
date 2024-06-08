@@ -554,6 +554,22 @@ def acGetAll():
 
     return jsonify(result), 200
 
+@app.route('/air_conditioner/getlast/<room_id>', methods=['GET'])
+def get_last_ac_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM air_conditioner WHERE room_id = %s ORDER BY time DESC LIMIT 1", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
 @app.route('/air_conditioner/getById/<ac_id>', methods=['GET'])
 def ac_get_by_id(ac_id):
     db = create_connection()
@@ -608,6 +624,22 @@ def get_all_fans():
 
     cursor = db.cursor()
     cursor.execute("SELECT * FROM fan")
+    key = [desc[0] for desc in cursor.description]
+    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+
+    cursor.close()
+    db.close()
+
+    return jsonify(result), 200
+
+@app.route('/fan/getlast/<room_id>', methods=['GET'])
+def get_last_fan_by_room_id(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM fan WHERE room_id = %s ORDER BY time DESC LIMIT 1", (room_id,))
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -1004,10 +1036,11 @@ def get_sensor_nodes_by_room_id(room_id):
             FROM sensor_node
             GROUP BY sensor_id
         ) s2 ON s1.sensor_id = s2.sensor_id AND s1.time = s2.max_time
+        where room_id = %s
         """
 
     try:
-        cursor.execute(query)
+        cursor.execute(query, (room_id,))
         rows = cursor.fetchall()
         result = [row for row in rows]
     except mysql.connector.Error as err:
@@ -1382,7 +1415,7 @@ def get_env_values_by_room_id(room_id):
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
-    cursor.execute("SELECT MAX(met), MAX(clo) FROM pmv_table where room_id = %s", (room_id,))
+    cursor.execute("SELECT met, clo FROM pmv_table WHERE room_id = %s ORDER BY time DESC LIMIT 1", (room_id,))
     max_values = cursor.fetchone()
 
     if max_values is None:
@@ -1892,6 +1925,52 @@ def update_fan_device(fan_id):
         cursor.close()
         db.close()
         return jsonify({"error": "Failed to update fan_device"}), 500
+
+@app.route('/node/getall/<int:room_id>', methods=['GET'])
+def get_all_nodes(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500
+
+    cursor = db.cursor(dictionary=True)
+
+    data = {
+        "sensor": [],
+        "em": [],
+        "fan": [],
+        "ac": [],
+        "gateway": []
+    }
+
+    try:
+        # Lấy thông tin sensor nodes
+        cursor.execute("SELECT * FROM registration_sensor WHERE room_id = %s", (room_id,))
+        data['sensor'] = cursor.fetchall()
+
+        # Lấy thông tin energy nodes (em)
+        cursor.execute("SELECT * FROM registration_em WHERE room_id = %s", (room_id,))
+        data['em'] = cursor.fetchall()
+
+        # Lấy thông tin fan nodes
+        cursor.execute("SELECT * FROM registration_fan WHERE room_id = %s", (room_id,))
+        data['fan'] = cursor.fetchall()
+
+        # Lấy thông tin ac nodes
+        cursor.execute("SELECT * FROM registration_ac WHERE room_id = %s", (room_id,))
+        data['ac'] = cursor.fetchall()
+
+        # Lấy thông tin gateway nodes
+        cursor.execute("SELECT * FROM registration_gateway WHERE room_id = %s", (room_id,))
+        data['gateway'] = cursor.fetchall()
+
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify(data), 200
 
 @app.route('/fan_device/delete/<fan_id>', methods=['DELETE'])
 def delete_fan_device(fan_id):
