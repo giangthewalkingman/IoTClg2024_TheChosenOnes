@@ -396,7 +396,10 @@ def get_all_registration_ac():
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
 
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM registration_ac")
+    cursor.execute(f"""SELECT registration_ac.*, ac_device.x_pos_device, ac_device.y_pos_device FROM registration_ac
+                       	LEFT JOIN ac_device
+                        on registration_ac.ac_id = ac_device.ac_id
+                        WHERE registration_ac.room_id = {room_id} """)
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -556,19 +559,24 @@ def acGetAll():
 
 @app.route('/air_conditioner/getlast/<room_id>', methods=['GET'])
 def get_last_ac_by_room_id(room_id):
-    db = create_connection()
-    if db is None:
-        return jsonify({"error": "Unable to connect to database"}), 500
+    if room_id.isnumeric(): #isalnum()
+        db = create_connection()
+        if db is None:
+            return jsonify({"error": "Unable to connect to database"}), 500
+        cursor = db.cursor()
+        cursor.execute(f"""SELECT air_conditioner.* FROM air_conditioner 
+                        JOIN registration_ac
+                        ON air_conditioner.ac_id = registration_ac.ac_id
+                        WHERE registration_ac.room_id = {room_id} ORDER BY time DESC LIMIT 1"""
+        )
+        key = [desc[0] for desc in cursor.description]
+        result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM air_conditioner WHERE room_id = %s ORDER BY time DESC LIMIT 1", (room_id,))
-    key = [desc[0] for desc in cursor.description]
-    result = [dict(zip(key, row)) for row in cursor.fetchall()]
+        cursor.close()
+        db.close()
 
-    cursor.close()
-    db.close()
-
-    return jsonify(result), 200
+        return jsonify(result), 200
+    else: return "I'm a teapot", 429
 
 @app.route('/air_conditioner/getById/<ac_id>', methods=['GET'])
 def ac_get_by_id(ac_id):
@@ -639,7 +647,10 @@ def get_last_fan_by_room_id(room_id):
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM fan WHERE room_id = %s ORDER BY time DESC LIMIT 1", (room_id,))
+    cursor.execute(f"""SELECT fan.* FROM fan
+                        JOIN registration_fan
+                        ON fan.fan_id = registration_fan.fan_id
+                        WHERE registration_fan.room_id = {room_id} ORDER BY time DESC LIMIT 1""")
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -712,7 +723,10 @@ def get_registration_fan_by_room_id(room_id):
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM registration_fan where room_id = %s", (room_id,))
+    cursor.execute(f"""SELECT registration_fan.*, fan_device.x_pos_device, fan_device.y_pos_device FROM registration_fan
+                       	LEFT JOIN fan_device
+                        on registration_fan.fan_id = fan_device.fan_id
+                        WHERE registration_fan.room_id = {room_id} """)
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -1029,14 +1043,18 @@ def get_sensor_nodes_by_room_id(room_id):
     cursor = db.cursor(dictionary=True)
 
     query = """
-        SELECT s1.*
-        FROM sensor_node s1
+        SELECT sn.*
+        FROM sensor_node sn
+        LEFT JOIN registration_sensor rs
+        ON rs.sensor_id = sn.sensor_id
         INNER JOIN (
-            SELECT sensor_id, MAX(time) AS max_time
+            SELECT sensor_id, MAX(time) as latest_time
             FROM sensor_node
             GROUP BY sensor_id
-        ) s2 ON s1.sensor_id = s2.sensor_id AND s1.time = s2.max_time
-        where room_id = %s
+        ) latest
+        ON sn.sensor_id = latest.sensor_id AND sn.time = latest.latest_time
+        WHERE rs.room_id = %s
+        ORDER BY sn.sensor_id
         """
 
     try:

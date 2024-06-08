@@ -5,7 +5,7 @@ import { useTheme } from "@emotion/react";
 import { styled, Slider } from "@mui/material";
 import MuiInput from '@mui/material/Input';
 
-const ActuatorList = ({ actuator }) => {
+const ActuatorList = ({ actuator, data }) => {
   const theme = useTheme();
   const [targetValues, setTargetValues] = useState({});
   const [controlModes, setControlModes] = useState({});
@@ -19,14 +19,14 @@ const ActuatorList = ({ actuator }) => {
   }));
 
   const fan_control_mode = [
-    { value: 'manual', mode: 'Manual' },
-    { value: 'auto', mode: 'Auto' },
-    { value: 'hybrid', mode: 'Hybrid' },
+    { value: 0, mode: 'Manual' },
+    { value: 1, mode: 'Auto' },
+    { value: 2, mode: 'Hybrid' },
   ];
 
   const air_con_control_mode = [
-    { value: 'mode1', mode: 'Mode1' },
-    { value: 'mode2', mode: 'Mode2' },
+    { value: 0, mode: 'Manual' },
+    { value: 1, mode: 'Auto' },
   ];
 
   const control_mode = actuator === 'air_con' ? air_con_control_mode : fan_control_mode;
@@ -39,7 +39,7 @@ const ActuatorList = ({ actuator }) => {
     setTargetValues(initialTargetValues);
 
     const initialControlModes = rows.reduce((acc, row) => {
-      acc[row.id] = actuator === 'air_con' ? 'mode1' : 'manual'; // Default control mode for Air Conditioner or Actuator
+      acc[row.id] = actuator === 'air_con' ? 0 : 0; // Default control mode for Air Conditioner or Actuator
       return acc;
     }, {});
     setControlModes(initialControlModes);

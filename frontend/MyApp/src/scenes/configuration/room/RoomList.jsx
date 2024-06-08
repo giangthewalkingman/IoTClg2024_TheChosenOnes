@@ -6,7 +6,8 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Header from '../../../components/Header';
-import { Button, Grid } from '@mui/material';
+import { Button, Grid, Typography, Backdrop, Stack } from '@mui/material';
+import InputBox from '../../../components/InputBox';
 import Paper from '@mui/material/Paper';
 import { host } from '../../../App';
 import { UserContext } from '../../../App';
@@ -20,34 +21,53 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
   const [buildingData, setBuildingData] = useState([]);
   const room_data_url = `http://${host}/room/getall`;
   const building_data_url = `http://${host}/building/getall`;
+  const [openBackdrop, setOpenBackdrop] = useState(false)
+  const [missingType, setMissingType] = useState(0);
+  
+  const handleSettingRoom = () => {
+    setOpenBackdrop(true)
+  }
+
+  const handleCancelSettings = () => {
+    setOpenBackdrop(false)
+    setMissingType(0)
+  }
+
+  const handleConfirmSettingRoom = (building_id, room_id, x_length, y_length, description) => {
+    if (x_length === '' || y_length === '' || description === '') {
+        setMissingType(1)
+    }
+    else {
+        setMissingType(0)
+        setOpenBackdrop(false)
+        update_room_data(building_id, room_id, x_length, y_length, description)
+    }
+  }
+
+  const update_room_data = (building_id, room_id, x_length, y_length, description) => {
+
+  }
+
+  const MissingInfo = ({missingType}) => {
+    if (missingType === 0) return <></>;
+    if (missingType === 1)
+    return (
+        <Grid item xs={12} pl={1} pt={1} >
+            <Typography fontSize='15px' color='red'>
+                Please fill all information
+            </Typography>
+        </Grid>
+    )
+}
   
   const get_information_data = async (room_data_url, building_data_url) => 
     {
       try {
       const room_data_response = await fetch(room_data_url);
       const building_data_response = await fetch(building_data_url);
-    //   const room_data_response = [
-    //     {
-    //       "building_id": 1,
-    //       "description": "Room 1",
-    //       "room_id": 1,
-    //       "x_length": 300.0,
-    //       "y_length": 500.0
-    //     }
-    //   ]
-    //   const building_data_response = [
-    //     {
-    //       "building_id": 1,
-    //       "location": "Hanoi",
-    //       "name": "Building 1"
-    //     }
-    //   ]
-      if ((room_data_response.status === 200) && (building_data_response.status === 200)) {   
-    //   if (1) {   
+      if ((room_data_response.status === 200) && (building_data_response.status === 200)) {    
         const room_data_json = await room_data_response.json();
         const building_data_json = await building_data_response.json();
-        // const room_data_json = room_data_response;
-        // const building_data_json = building_data_response;
         if (room_data_json && building_data_json) {
           setRoomData(room_data_json);
           setBuildingData(building_data_json);
@@ -80,7 +100,8 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
   },[]);
 
   return (
-    <Grid container display='flex' spacing={2} m={0}>
+    isLoading ? <h1>Loading...</h1> :
+    <Grid container display='flex' rowSpacing={2} m={0}>
       <Grid item xs={12}>
         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', boxShadow: 0 }}>
           <Header title="All building records" fontSize="20px"/>
@@ -90,6 +111,8 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Building ID</TableCell>
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Name</TableCell>
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Location</TableCell>
+                      <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
+                      <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
                   </TableRow>
               </TableHead>
@@ -180,6 +203,8 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Width</TableCell>
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Length</TableCell>
                       <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
+                      <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
+                      <TableCell sx={{"font-weight": "600", "font-size": "15px"}}></TableCell>
                   </TableRow>
               </TableHead>
               <TableBody>
@@ -233,9 +258,103 @@ const RoomList = ({setConfig, setRoomIdForNodeConfig, setRoomSize}) => {
                                   padding: "5px 12px",
                                   }}
                               variant="contained"
+                              onClick={handleSettingRoom}
                           >
                               Setting
                           </Button>
+                          <Backdrop
+                            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                            open={openBackdrop}
+                          >
+                            <Paper sx={{ padding: '20px', maxWidth: '600px', width: '100%' }}>
+                            <Typography variant="h3" fontWeight='bold' mb={2} align='center'>
+                                Change Room Information
+                            </Typography>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant='h4' mb={1}>
+                                        Room ID
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={`room_id_settings_${row.room_id}`}
+                                        name={`room_id_settings_${row.room_id}`}
+                                        placeholder='Room ID'
+                                        defaultValue={row.room_id}
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant='h4' mb={1}>
+                                        Building ID
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={`building_id_settings_${row.room_id}`}
+                                        name={`building_id_settings_${row.room_id}`}
+                                        placeholder='Building ID'
+                                        defaultValue={row.building_id}
+                                        InputProps={{
+                                        readOnly: true,
+                                        }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={12}>
+                                    <Typography variant='h4' mb={1}>
+                                        Width
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={`x_length_settings_${row.room_id}`}
+                                        name={`x_length_settings_${row.room_id}`}
+                                        placeholder='Width'
+                                        defaultValue={row.x_length}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={12}>
+                                    <Typography variant='h4' mb={1}>
+                                        Length
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={`y_length_settings_${row.room_id}`}
+                                        name={`y_length_settings_${row.room_id}`}
+                                        placeholder='Length'
+                                        defaultValue={row.y_length}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={12}>
+                                    <Typography variant='h4' mb={1}>
+                                        Description
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={`description_settings_${row.room_id}`}
+                                        name={`description_settings_${row.room_id}`}
+                                        placeholder='Description'
+                                        defaultValue={row.description}
+                                    />
+                                </Grid>
+                                <MissingInfo missingType={missingType} />
+                            </Grid>
+                            <Stack direction="row" spacing={2} justifyContent="flex-end" mt={2}>
+                                <Button variant="contained" color="secondary" onClick={handleCancelSettings}>
+                                Cancel
+                                </Button>
+                                <Button variant="contained" color="primary" onClick={
+                                    handleConfirmSettingRoom(document.getElementById(`building_id_settings_${row.building_id}`).value,
+                                                            document.getElementById(`room_id_settings_${row.room_id}`).value,
+                                                            document.getElementById(`x_length_settings_${row.x_length}`).value,
+                                                            document.getElementById(`y_length_settings_${row.y_length}`).value,
+                                                            document.getElementById(`description_settings_${row.description}`).value,)
+                                }>
+                                Confirm
+                                </Button>
+                            </Stack>
+                            </Paper>
+                        </Backdrop>
                       </TableCell>
                       <TableCell 
                           sx={{

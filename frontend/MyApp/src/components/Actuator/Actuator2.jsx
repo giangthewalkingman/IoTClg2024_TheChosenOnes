@@ -18,6 +18,8 @@ export default function Actuator({room_id, callbackSetSignIn})
     const [actuatorInfoOfRoom, setActuatorInfoOfRoom] = useState([]);
     const theme = useTheme();
     const [isLoading, setIsLoading] = useState(false);
+    const [acData, setACData] = useState([]);
+    const [fanData, setFanData] = useState([]);
     
     const ac_data_url = `http://${host}/air_conditioner/getlast/${room_id}`;
     const fan_data_url = `http://${host}/fan/getlast/${room_id}`;
@@ -65,7 +67,30 @@ export default function Actuator({room_id, callbackSetSignIn})
               const fan_data_json = fan_data_response;
               const ac_data_json = ac_data_response;
               if (fan_data_json && ac_data_json) {
-                
+                let fan_data_table = []
+                let ac_data_table = [];
+                for (let item of fan_data_json) {
+                    fan_data_table.push(
+                        { 
+                            id: item.fan_id,
+                            value: item.set_speed,
+                            set_value: item.set_speed,
+                            control_mode: item.control_mode,
+                            state: item.status,
+                        }
+                    )
+                }
+                for (let item of ac_data_json) {
+                    ac_data_table.push({
+                        id: item.fan_id,
+                        value: item.set_temp,
+                        set_value: item.set_temp,
+                        control_mode: item.control_mode,
+                        state: item.state,
+                    })
+                }
+                setFanData(fan_data_table)
+                setACData(ac_data_table)
                 setIsLoading(false);
               } else {
                 alert('No energy data!');
