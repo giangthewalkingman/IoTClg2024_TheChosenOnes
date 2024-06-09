@@ -564,11 +564,11 @@ def get_last_ac_by_room_id(room_id):
         if db is None:
             return jsonify({"error": "Unable to connect to database"}), 500
         cursor = db.cursor()
-        cursor.execute(f"""SELECT air_conditioner.* FROM air_conditioner 
-                        JOIN registration_ac
-                        ON air_conditioner.ac_id = registration_ac.ac_id
-                        WHERE registration_ac.room_id = {room_id} ORDER BY time DESC LIMIT 1"""
-        )
+        cursor.execute(f"""SELECT ac.ac_id, MAX(ac.time) AS latest_time, ac.set_temp, ac.control_mode, ac.state FROM air_conditioner ac
+                            LEFT JOIN registration_ac ra
+                            ON ra.ac_id = ac.ac_id
+                            WHERE ra.room_id = {room_id}
+                            GROUP BY ra.ac_id""")
         key = [desc[0] for desc in cursor.description]
         result = [dict(zip(key, row)) for row in cursor.fetchall()]
 
@@ -647,10 +647,16 @@ def get_last_fan_by_room_id(room_id):
         return jsonify({"error": "Unable to connect to database"}), 500
 
     cursor = db.cursor()
-    cursor.execute(f"""SELECT fan.* FROM fan
-                        JOIN registration_fan
-                        ON fan.fan_id = registration_fan.fan_id
-                        WHERE registration_fan.room_id = {room_id} ORDER BY time DESC LIMIT 1""")
+    cursor.execute(f"""SELECT fan1.* FROM fan fan1
+                        LEFT JOIN registration_fan rf
+                        ON rf.fan_id = fan1.fan_id
+                        JOIN (
+                            SELECT fan_id, MAX(fan.time) AS latest_time
+                            FROM fan
+                            GROUP BY fan_id
+                        ) fan2
+                        ON fan1.time = fan2.latest_time AND fan1.fan_id = fan2.fan_id
+                        WHERE rf.room_id = {room_id}""")
     key = [desc[0] for desc in cursor.description]
     result = [dict(zip(key, row)) for row in cursor.fetchall()]
 

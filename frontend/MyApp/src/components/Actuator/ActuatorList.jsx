@@ -5,7 +5,7 @@ import { useTheme } from "@emotion/react";
 import { styled, Slider } from "@mui/material";
 import MuiInput from '@mui/material/Input';
 
-const ActuatorList = ({ actuator, data }) => {
+const ActuatorList = ({ actuator, rows }) => {
   const theme = useTheme();
   const [targetValues, setTargetValues] = useState({});
   const [controlModes, setControlModes] = useState({});
@@ -14,7 +14,7 @@ const ActuatorList = ({ actuator, data }) => {
     width: 20,
     height: 20,
     borderRadius: '50%',
-    backgroundColor: state === 'on' ? 'green' : 'red',
+    backgroundColor: state === 1 ? 'green' : 'red',
     display: 'inline-block',
   }));
 
@@ -33,16 +33,20 @@ const ActuatorList = ({ actuator, data }) => {
 
   useEffect(() => {
     const initialTargetValues = rows.reduce((acc, row) => {
-      acc[row.id] = actuator === 'air_con' ? 15 : 30; // Default target value for Air Conditioner or Actuator
+      acc[row.id] = row.set_value; // Default target value for Air Conditioner or Actuator
       return acc;
     }, {});
     setTargetValues(initialTargetValues);
+    console.log('SET VALUE')
+    console.log(initialTargetValues)
 
     const initialControlModes = rows.reduce((acc, row) => {
-      acc[row.id] = actuator === 'air_con' ? 0 : 0; // Default control mode for Air Conditioner or Actuator
+      acc[row.id] = row.control_mode; // Default control mode for Air Conditioner or Actuator
       return acc;
     }, {});
     setControlModes(initialControlModes);
+    console.log('SET CONTROL MODE')
+    console.log(initialControlModes)
   }, [actuator]);
 
   const handleSliderChange = (id, newValue) => {
@@ -187,24 +191,24 @@ const ActuatorList = ({ actuator, data }) => {
       flex: 0.1,
       align: 'center', headerAlign: 'center',
       renderCell: (params) => (
-        <Circle state='on' />
+        <Circle state={params.value} />
       ),
     },
   ];
 
-  const rows = [
-    { id: 1, value: 10 },
-    { id: 2, value: 20 },
-    { id: 3, value: 30 },
-    { id: 4, value: 40 },
-    { id: 5, value: 50 },
-    { id: 6, value: 60 },
-    { id: 7, value: 70 },
-    { id: 8, value: 80 },
-    { id: 9, value: 90 },
-    { id: 10, value: 110 },
-    { id: 11, value: 120 },
-  ];
+  // const rows = [
+  //   { id: 1, value: 10, set_value: 20, control_mode: 0, state: 1 },
+  //   { id: 2, value: 20, set_value: 21, control_mode: 1, state: 1 },
+  //   { id: 3, value: 30, set_value: 22, control_mode: 1, state: 0 },
+  //   { id: 4, value: 40, set_value: 23, control_mode: 0, state: 1 },
+  //   { id: 5, value: 50, set_value: 24, control_mode: 2, state: 0 },
+  //   { id: 6, value: 60, set_value: 25, control_mode: 0, state: 1 },
+  //   { id: 7, value: 70, set_value: 26, control_mode: 1, state: 0 },
+  //   { id: 8, value: 80, set_value: 27, control_mode: 1, state: 0 },
+  //   { id: 9, value: 90, set_value: 28, control_mode: 0, state: 1 },
+  //   { id: 10, value: 110, set_value: 29, control_mode: 1, state: 1 },
+  //   { id: 11, value: 120, set_value: 30, control_mode: 1, state: 1 },
+  // ];
 
   return (
     <Grid container item px={1} xs={12} lg={6}>

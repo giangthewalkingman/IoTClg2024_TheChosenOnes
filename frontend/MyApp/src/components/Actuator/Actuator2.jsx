@@ -17,7 +17,7 @@ export default function Actuator({room_id, callbackSetSignIn})
     const [actuatorStatus, setActuatorStatus] = useState(null);
     const [actuatorInfoOfRoom, setActuatorInfoOfRoom] = useState([]);
     const theme = useTheme();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [acData, setACData] = useState([]);
     const [fanData, setFanData] = useState([]);
     
@@ -27,45 +27,45 @@ export default function Actuator({room_id, callbackSetSignIn})
     const get_information_data = async (ac_data_url, fan_data_url) => 
     {
         try {
-            // const fan_data_response = await fetch(fan_data_url);
-            // const ac_data_response = await fetch(ac_data_url);
-            const fan_data_response = [
-                {
-                    "control_mode": 2,
-                    "fan_id": 1,
-                    "id": 6,
-                    "set_speed": 70.0,
-                    "set_time": 250,
-                    "status": 1,
-                    "time": "Wed, 22 May 2024 08:45:00 GMT"
-                },
-                {
-                    "control_mode": 2,
-                    "fan_id": 2,
-                    "id": 8,
-                    "set_speed": 14.0,
-                    "set_time": 250,
-                    "status": 1,
-                    "time": "Wed, 22 May 2024 08:45:00 GMT"
-                }
-            ]
-            const ac_data_response = [
-                {
-                    "ac_id": 1,
-                    "control_mode": 0,
-                    "id": 1,
-                    "set_temp": 25.0,
-                    "state": 1,
-                    "status": 1,
-                    "time": "Wed, 22 May 2024 06:00:00 GMT"
-                },
-            ];
-            // if ((ac_data_response.status === 200) && (fan_data_response.status === 200)) {   
-            if (1) {   
-            //   const fan_data_json = await fan_data_response.json();
-            //   const ac_data_json = await ac_data_response.json();
-              const fan_data_json = fan_data_response;
-              const ac_data_json = ac_data_response;
+            const fan_data_response = await fetch(fan_data_url);
+            const ac_data_response = await fetch(ac_data_url);
+            // const fan_data_response = [
+            //     {
+            //         "control_mode": 2,
+            //         "fan_id": 1,
+            //         "id": 6,
+            //         "set_speed": 70.0,
+            //         "set_time": 250,
+            //         "status": 1,
+            //         "time": "Wed, 22 May 2024 08:45:00 GMT"
+            //     },
+            //     {
+            //         "control_mode": 2,
+            //         "fan_id": 2,
+            //         "id": 8,
+            //         "set_speed": 14.0,
+            //         "set_time": 250,
+            //         "status": 1,
+            //         "time": "Wed, 22 May 2024 08:45:00 GMT"
+            //     }
+            // ]
+            // const ac_data_response = [
+            //     {
+            //         "ac_id": 1,
+            //         "control_mode": 0,
+            //         "id": 1,
+            //         "set_temp": 25.0,
+            //         "state": 1,
+            //         "status": 1,
+            //         "time": "Wed, 22 May 2024 06:00:00 GMT"
+            //     },
+            // ];
+            if ((ac_data_response.status === 200) && (fan_data_response.status === 200)) {   
+            // if (1) {   
+              const fan_data_json = await fan_data_response.json();
+              const ac_data_json = await ac_data_response.json();
+            //   const fan_data_json = fan_data_response;
+            //   const ac_data_json = ac_data_response;
               if (fan_data_json && ac_data_json) {
                 let fan_data_table = []
                 let ac_data_table = [];
@@ -76,13 +76,13 @@ export default function Actuator({room_id, callbackSetSignIn})
                             value: item.set_speed,
                             set_value: item.set_speed,
                             control_mode: item.control_mode,
-                            state: item.status,
+                            state: (item.set_speed === 0 ? 0 : 1),
                         }
                     )
                 }
                 for (let item of ac_data_json) {
                     ac_data_table.push({
-                        id: item.fan_id,
+                        id: item.ac_id,
                         value: item.set_temp,
                         set_value: item.set_temp,
                         control_mode: item.control_mode,
@@ -108,7 +108,15 @@ export default function Actuator({room_id, callbackSetSignIn})
     }
 
     useEffect(() => {
-        get_information_data(ac_data_url, fan_data_url)
+        if (isLoading === true) {
+            get_information_data(ac_data_url, fan_data_url)
+          }
+          else {
+            const timer = setTimeout(()=>{
+                get_information_data(ac_data_url, fan_data_url)
+            }, 60000);
+            return () => clearTimeout(timer);
+          }
     },[]);
 
     return (
@@ -192,8 +200,8 @@ export default function Actuator({room_id, callbackSetSignIn})
                         flexDirection="column" alignContent="center" justifyContent="center"
                     >
                         <Grid container display='flex' flexDirection='row'>
-                            <ActuatorList actuator='air_con' />
-                            <ActuatorList actuator='fan' />
+                            <ActuatorList actuator='air_con' rows={acData} />
+                            <ActuatorList actuator='fan' rows={fanData} />
                         </Grid>
                     </Box>
                 </Grid>
