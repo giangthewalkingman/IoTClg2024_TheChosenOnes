@@ -10,9 +10,11 @@ const SendKeyConnect = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [deviceType, setDeviceType] = useState(0);
     const url = '';
+
     const send_install_code = (url) => {
         setInstallCode('');
     }
+    
     const [missingType, setMissingType] = useState(0);
     const MissingInfo = ({missingType}) => {
         if (missingType === 0) return <></>;

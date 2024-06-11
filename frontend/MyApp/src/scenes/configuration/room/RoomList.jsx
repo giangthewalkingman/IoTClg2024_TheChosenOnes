@@ -7,13 +7,14 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Header from '../../../components/Header';
 import { Button, Grid, Typography, Backdrop, Stack } from '@mui/material';
-import InputBox from '../../../components/InputBox';
 import Paper from '@mui/material/Paper';
 import { host } from '../../../App';
 import { UserContext } from '../../../App';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import DetailsIcon from '@mui/icons-material/Details';
+import SettingRoom from './SettingRoom';
+import DeleteRoom from './DeleteRoom';
 
 const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +23,7 @@ const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
   const room_data_url = `http://${host}/room/getall`;
   const building_data_url = `http://${host}/building/getall`;
   const [openBackdrop, setOpenBackdrop] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
   const [missingType, setMissingType] = useState(0);
   const [selectedRow, setSelectedRow] = useState(null);
   const widthRef = useRef(null);
@@ -31,15 +33,23 @@ const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
   const handleSettingRoom = (row) => {
     setOpenBackdrop(true);
     setSelectedRow(row);
-    setRoomIdForNodeConfig(row.room_id);
-    setRoomSize({ x: row.x_length, y: row.y_length });
   };
+
+  const handleDeleteRoom = (row) => {
+    setOpenDelete(true);
+    setSelectedRow(row);
+  }
 
   const handleCancelSettings = () => {
     setOpenBackdrop(false);
     setMissingType(0);
     setSelectedRow(null);
   };
+
+  const handleCancelDelete = () => {
+    setOpenDelete(false);
+    setSelectedRow(null);
+  }
 
   const handleConfirmSettingRoom = () => {
     const { building_id, room_id } = selectedRow;
@@ -56,9 +66,22 @@ const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
     }
   };
 
+  const handleConfirmDeleteRoom = () => {
+    const { building_id, room_id } = selectedRow;
+    const x_length = widthRef.current.value;
+    const y_length = lengthRef.current.value;
+    const description = descriptionRef.current.value;
+    setOpenDelete(false)
+    delete_room_data(building_id, room_id, x_length, y_length, description);
+  }
+
   const update_room_data = (building_id, room_id, x_length, y_length, description) => {
     // Update room data logic here
   };
+
+  const delete_room_data = (building_id, room_id, x_length, y_length, description) => {
+
+  }
 
   const get_information_data = async (room_data_url, building_data_url) => {
     try {
@@ -233,6 +256,7 @@ const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
                         padding: "5px 12px",
                       }}
                       variant="contained"
+                      onClick={() => handleDeleteRoom(row)}
                     >
                       Delete
                     </Button>
@@ -243,100 +267,15 @@ const RoomList = ({ setConfig, setRoomIdForNodeConfig, setRoomSize }) => {
           </Table>
         </Paper>
       </Grid>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={openBackdrop}
-      >
-        {selectedRow && (
-          <Paper sx={{ padding: '20px', maxWidth: '600px', width: '100%' }}>
-            <Typography variant="h3" fontWeight='bold' mb={2} align='center'>
-              Change Room Information
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant='h4' mb={1}>
-                  Room ID
-                </Typography>
-                <InputBox
-                  required
-                  id={`room_id_settings_${selectedRow.room_id}`}
-                  name={`room_id_settings_${selectedRow.room_id}`}
-                  placeholder='Room ID'
-                  defaultValue={selectedRow.room_id}
-                  readOnly={true}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant='h4' mb={1}>
-                  Building ID
-                </Typography>
-                <InputBox
-                  required
-                  id={`building_id_settings_${selectedRow.id}`}
-                  name={`building_id_settings_${selectedRow.id}`}
-                  placeholder='Building ID'
-                  defaultValue={selectedRow.building_id}
-                  readOnly={true}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12}>
-                <Typography variant='h4' mb={1}>
-                  Width
-                </Typography>
-                <InputBox
-                  required
-                  inputRef={widthRef}
-                  id={`x_length_settings_${selectedRow.id}`}
-                  name={`x_length_settings_${selectedRow.id}`}
-                  placeholder='Width'
-                  defaultValue={selectedRow.x_length}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12}>
-                <Typography variant='h4' mb={1}>
-                  Length
-                </Typography>
-                <InputBox
-                  required
-                  inputRef={lengthRef}
-                  id={`y_length_settings_${selectedRow.id}`}
-                  name={`y_length_settings_${selectedRow.id}`}
-                  placeholder='Length'
-                  defaultValue={selectedRow.y_length}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12}>
-                <Typography variant='h4' mb={1}>
-                  Description
-                </Typography>
-                <InputBox
-                  required
-                  inputRef={descriptionRef}
-                  id={`description_settings_${selectedRow.id}`}
-                  name={`description_settings_${selectedRow.id}`}
-                  placeholder='Description'
-                  defaultValue={selectedRow.description}
-                />
-              </Grid>
-              {missingType !== 0 && (
-                <Grid item xs={12} pl={1} pt={1} >
-                  <Typography fontSize='15px' color='red'>
-                    Please fill all information
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-            <Stack direction="row" spacing={2} justifyContent="flex-end" mt={2}>
-              <Button variant="contained" color="secondary" onClick={handleCancelSettings}>
-                Cancel
-              </Button>
-              <Button variant="contained" color="primary" onClick={handleConfirmSettingRoom}>
-                Confirm
-              </Button>
-            </Stack>
-          </Paper>
-        )}
-      </Backdrop>
+      <SettingRoom widthRef={widthRef} lengthRef={lengthRef} descriptionRef={descriptionRef}
+        open={openBackdrop} selectedRow={selectedRow} missingType={missingType}
+        handleCancelSettings={handleCancelSettings}
+        handleConfirmSettingRoom={handleConfirmSettingRoom}
+      />
+      <DeleteRoom openDelete={openDelete} selectedRow={selectedRow}
+        handleCancelDelete={handleCancelDelete}
+        handleConfirmDeleteRoom={handleConfirmDeleteRoom}
+      />
     </Grid>
   );
 };

@@ -1,92 +1,105 @@
 import * as React from 'react';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Checkbox from '@mui/material/Checkbox';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
+import { Button, Grid, Typography, Backdrop, Stack } from '@mui/material';
+import InputBox from '../../../components/InputBox';
+import Paper from '@mui/material/Paper';
 
-export default function NewRoom({setDataCreateRoom, dataCreateRoom}) {
+const SettingRoom = ({open, selectedRow, widthRef, lengthRef, descriptionRef, handleCancelSettings, handleConfirmSettingRoom, missingType}) => {
   return (
-    <React.Fragment>
-      <Typography variant="h4" gutterBottom>
-        Detail
-      </Typography>
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={12}>
-          <TextField
-            required
-            id="room_id"
-            name="room_id"
-            label="Room Id"
-            fullWidth
-            autoComplete="room_id"
-            variant="standard"
-            value={dataCreateRoom.room_id}
-            onInput={(e)=>{e.target.value = e.target.value.replace(/[^0-9]/g, '')}}
-            onChange={(e)=>setDataCreateRoom({...dataCreateRoom, room_id: e.target.value})}
-          />
-        </Grid>
-        <Grid item xs={12} sm={12}>
-            <FormControl>
-                <FormLabel id="demo-controlled-radio-buttons-group">Construction type</FormLabel>
-                <RadioGroup
-                    aria-labelledby="demo-controlled-radio-buttons-group"
-                    name="controlled-radio-buttons-group"
-                    row
-                    value={dataCreateRoom.construction_name}
-                    onChange={(e)=>setDataCreateRoom({...dataCreateRoom, construction_name: e.target.value})}
-                >
-                    <FormControlLabel value="building" control={<Radio />} label="Building" />
-                    <FormControlLabel value="farm" control={<Radio />} label="Farm" />
-                </RadioGroup>
-            </FormControl>
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            required
-            id="x_length"
-            name="x_length"
-            label="Width"
-            fullWidth
-            autoComplete="x_length"
-            variant="standard"
-            value={dataCreateRoom.x_length}
-            onInput={(e)=>{e.target.value = e.target.value.replace(/[^0-9]/g, '')}}
-            onChange={(e)=>setDataCreateRoom({...dataCreateRoom, x_length: e.target.value})}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            required
-            id="y_length"
-            name="y_length"
-            label="Length"
-            fullWidth
-            autoComplete="y_length"
-            variant="standard"
-            value={dataCreateRoom.y_length}
-            onInput={(e)=>{e.target.value = e.target.value.replace(/[^0-9]/g, '')}}
-            onChange={(e)=>setDataCreateRoom({...dataCreateRoom, y_length: e.target.value})}
-          />
-        </Grid>
-        <Grid item xs={12} sm={12}>
-          <TextField
-            required
-            id="information"
-            name="information"
-            label="Information"
-            fullWidth
-            autoComplete="information"
-            variant="standard"
-            value={dataCreateRoom.information}
-            onChange={(e)=>setDataCreateRoom({...dataCreateRoom, information: e.target.value})}
-          />
-        </Grid>
-      </Grid>
-    </React.Fragment>
-  );
+    <Backdrop
+      sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      open={open}
+    >
+      {selectedRow && (
+        <Paper sx={{ padding: '20px', maxWidth: '600px', width: '100%' }}>
+          <Typography variant="h3" fontWeight='bold' mb={2} align='center'>
+            Change Room Information
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='h4' mb={1}>
+                Room ID
+              </Typography>
+              <InputBox
+                required
+                id={`room_id_settings_${selectedRow.room_id}`}
+                name={`room_id_settings_${selectedRow.room_id}`}
+                placeholder='Room ID'
+                defaultValue={selectedRow.room_id}
+                readOnly={true}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant='h4' mb={1}>
+                Building ID
+              </Typography>
+              <InputBox
+                required
+                id={`building_id_settings_${selectedRow.id}`}
+                name={`building_id_settings_${selectedRow.id}`}
+                placeholder='Building ID'
+                defaultValue={selectedRow.building_id}
+                readOnly={true}
+              />
+            </Grid>
+            <Grid item xs={12} sm={12}>
+              <Typography variant='h4' mb={1}>
+                Width
+              </Typography>
+              <InputBox
+                required
+                inputRef={widthRef}
+                id={`x_length_settings_${selectedRow.id}`}
+                name={`x_length_settings_${selectedRow.id}`}
+                placeholder='Width'
+                defaultValue={selectedRow.x_length}
+              />
+            </Grid>
+            <Grid item xs={12} sm={12}>
+              <Typography variant='h4' mb={1}>
+                Length
+              </Typography>
+              <InputBox
+                required
+                inputRef={lengthRef}
+                id={`y_length_settings_${selectedRow.id}`}
+                name={`y_length_settings_${selectedRow.id}`}
+                placeholder='Length'
+                defaultValue={selectedRow.y_length}
+              />
+            </Grid>
+            <Grid item xs={12} sm={12}>
+              <Typography variant='h4' mb={1}>
+                Description
+              </Typography>
+              <InputBox
+                required
+                inputRef={descriptionRef}
+                id={`description_settings_${selectedRow.id}`}
+                name={`description_settings_${selectedRow.id}`}
+                placeholder='Description'
+                defaultValue={selectedRow.description}
+              />
+            </Grid>
+            {missingType !== 0 && (
+              <Grid item xs={12} pl={1} pt={1} >
+                <Typography fontSize='15px' color='red'>
+                  Please fill all information
+                </Typography>
+              </Grid>
+            )}
+          </Grid>
+          <Stack direction="row" spacing={2} justifyContent="flex-end" mt={2}>
+            <Button variant="contained" color="secondary" onClick={handleCancelSettings}>
+              Cancel
+            </Button>
+            <Button variant="contained" color="primary" onClick={handleConfirmSettingRoom}>
+              Confirm
+            </Button>
+          </Stack>
+        </Paper>
+      )}
+    </Backdrop>
+  )
 }
+
+export default SettingRoom;

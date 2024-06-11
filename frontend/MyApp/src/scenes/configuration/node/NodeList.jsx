@@ -5,6 +5,7 @@ import { host } from '../../../App';
 import SettingNode from './SettingNode';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
+import DeleteNode from './DeleteNode';
 
 const NodeList = ({ roomIdForNodeConfig }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +15,7 @@ const NodeList = ({ roomIdForNodeConfig }) => {
     const [airNodeData, setAirNodeData] = useState([]);
     const [gatewayData, setGatewayData] = useState([]);
     const [openSetting, setOpenSetting] = useState(false);
+    const [openDelete, setOpenDelete] = useState(false);
     const [selectedNodeData, setSelectedNodeData] = useState({});
     const [selectedNodeType, setSelectedNodeType] = useState('');
 
@@ -27,6 +29,16 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 
     const handleCloseSetting = () => {
         setOpenSetting(false);
+    };
+
+    const handleOpenDelete = (nodeData, type) => {
+        setSelectedNodeData(nodeData);
+        setSelectedNodeType(type);
+        setOpenDelete(true);
+    };
+
+    const handleCloseDelete = () => {
+        setOpenDelete(false);
     };
 
     const TableContent = ({ node_data, type }) => {
@@ -95,6 +107,7 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 											padding: '5px 12px',
 										}}
 										variant="contained"
+                                        onClick={() => handleOpenDelete(row, type)}
 									>
 										Delete
 									</Button>
@@ -136,18 +149,18 @@ const NodeList = ({ roomIdForNodeConfig }) => {
                 ],
                 'energy': [
                     {
-                        "em_id": 1,
                         "room_id": 1,
                         "gateway_id": 1,
+                        "em_id": 1,
                         "x_pos": 0,
                         "y_pos": 0,
                     }
                 ],
                 'fan': [
                     {
-                        "fan_id": 1,
                         "room_id": 1,
                         "gateway_id": 1,
+                        "fan_id": 1,
                         "x_pos": 20,
                         "y_pos": 400,
                         "model": "manual",
@@ -158,9 +171,9 @@ const NodeList = ({ roomIdForNodeConfig }) => {
                         "y_pos_device": '',
                     },
                     {
-                        "fan_id": 2,
                         "room_id": 1,
                         "gateway_id": 1,
+                        "fan_id": 2,
                         "x_pos": -1,
                         "y_pos": -1,
                         "model": "manual",
@@ -173,7 +186,8 @@ const NodeList = ({ roomIdForNodeConfig }) => {
                 ],
                 'ac': [
                     {
-                        "ac_id": 1, "room_id": 1, "x_pos": -1, "y_pos": -1, "gateway_id": 1,
+                        "room_id": 1, "gateway_id": 1, "ac_id": 1, 
+                        "x_pos": -1, "y_pos": -1,
                         "model": "manual",
                         'num_device': 0,
                         'num_sensor_link': 1,
@@ -236,6 +250,12 @@ const NodeList = ({ roomIdForNodeConfig }) => {
             <SettingNode
                 openSetting={openSetting}
                 handleClose={handleCloseSetting}
+                nodeData={selectedNodeData}
+                type={selectedNodeType}
+            />
+            <DeleteNode 
+                openDelete={openDelete}
+                handleClose={handleCloseDelete}
                 nodeData={selectedNodeData}
                 type={selectedNodeType}
             />
