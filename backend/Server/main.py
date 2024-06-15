@@ -31,7 +31,7 @@ def create_connection():
         return None
 
 # init mqtt
-mqtt_broker = 'test.mosquitto.org' # address broker
+mqtt_broker = '127.0.0.1' # address broker
 mqtt_port = 1883
 mqtt_topic_connect_key = 'gateway/connect_key'
 mqtt_topic_connect_key_ack = 'server/connect_key_ack'
@@ -389,8 +389,8 @@ def delete_room(room_id):
         return jsonify({"error": "Failed to delete room", "details": str(e)}), 500
 
 # air_conditioner
-@app.route('/registration_ac/getall', methods=['GET'])
-def get_all_registration_ac():
+@app.route('/registration_ac/getall/<room_id>', methods=['GET'])
+def get_all_registration_ac(room_id):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
