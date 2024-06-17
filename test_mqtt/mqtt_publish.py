@@ -1,7 +1,7 @@
+import json
 import paho.mqtt.client as mqtt
 
-
-BROKER = "127.0.0.1"
+BROKER = "test.mosquitto.org"
 PORT = 1883
 
 # Define the MQTT broker details
@@ -19,15 +19,17 @@ client.connect(broker, port)
 
 # Function to publish a message
 def publish_message(message):
-    result = client.publish(topic, message)
+    # Convert message to JSON string
+    message_json = json.dumps(message)
+    result = client.publish(topic, message_json)
     status = result[0]
     if status == 0:
-        print(f"Message '{message}' sent to topic '{topic}'")
+        print(f"Message '{message_json}' sent to topic '{topic}'")
     else:
         print(f"Failed to send message to topic {topic}")
 
 # Publish a test message
-publish_message("Hello MQTT")
+publish_message(['a', 'b', 'c'])
 
 # Disconnect the client
 client.disconnect()

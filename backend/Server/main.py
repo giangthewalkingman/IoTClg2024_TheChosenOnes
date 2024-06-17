@@ -1,5 +1,4 @@
 import json
-import threading
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process
@@ -10,7 +9,7 @@ from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
-import paho.mqtt.client as mqtt
+from backend.Server.mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, ack_info
 
 app = Flask(__name__)
 CORS(app)
@@ -29,43 +28,6 @@ def create_connection():
     except Error as e:
         print("Error while connecting to MySQL:", e)
         return None
-
-# init mqtt
-mqtt_broker = '127.0.0.1' # address broker
-mqtt_port = 1883
-mqtt_topic_connect_key = 'gateway/connect_key'
-mqtt_topic_connect_key_ack = 'server/connect_key_ack'
-
-# MQTT Callbacks
-def on_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
-    client.subscribe(mqtt_topic_connect_key_ack)
-
-def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.payload))
-    if msg.topic == mqtt_topic_connect_key_ack:
-        handle_ack(json.loads(msg.payload))
-
-# Connect MQTT
-def connect_mqtt():
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect(mqtt_broker, mqtt_port, 60)
-    return client
-
-mqtt_client = connect_mqtt()
-
-ack_received = threading.Event()
-ack_info = None
-
-def handle_ack(message):
-    global ack_info
-    ack_info = message
-    ack_received.set()
-
-def run_mqtt_client():
-    mqtt_client.loop_forever()
 
 @app.route('/')
 def home():
@@ -2084,8 +2046,5 @@ def connect_key():
 if __name__ == '__main__':
     weather_process = Process(target=schedule_weather_insert)
     weather_process.start()
-
-    mqtt_thread = threading.Thread(target=run_mqtt_client)
-    mqtt_thread.start()
 
     app.run(debug=True)

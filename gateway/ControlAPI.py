@@ -9,7 +9,7 @@ MYSQL_PASSWORD = '12345678'
 MYSQL_DATABASE = 'schema_gateway'
 
 # Cấu hình MQTT
-MQTT_BROKER = '127.0.0.1'
+MQTT_BROKER = 'test.mosquitto.org'
 MQTT_PORT = 1883
 MQTT_TOPIC_PMV = 'pmv_data'
 MQTT_TOPIC_SENSOR = 'sensor_data'
@@ -113,21 +113,44 @@ def fetch_ac_data():
         print(f"Error: {err}")
         return None
 
+# Callback khi kết nối thành công
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Connected to MQTT Broker!")
+    else:
+        print(f"Failed to connect, return code {rc}")
+
+# Callback khi ngắt kết nối
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print("Unexpected disconnection.")
+    else:
+        print("Disconnected from MQTT Broker")
+
+# Callback khi một tin nhắn được gửi thành công
+def on_publish(client, userdata, mid):
+    print("Message published.")
+
 # Hàm kết nối tới MQTT và gửi dữ liệu
 def publish_to_mqtt(data, topic):
-    client = mqtt.Client()
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-    client.loop_start()
-
     message = ', '.join(map(str, data))
-    client.publish(topic, message)
-    print(f"Published to {topic}: {message}")
-
-    client.loop_stop()
-    client.disconnect()
+    result = client.publish(topic, message)
+    if result[0] == mqtt.MQTT_ERR_SUCCESS:
+        print(f"Published to {topic}: {message}")
+    else:
+        print(f"Failed to publish to {topic}")
 
 if __name__ == "__main__":
     client = mqtt.Client()
+
+    # Gán các callback
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_publish = on_publish
+
+    # Thiết lập tự động kết nối lại
+    client.reconnect_delay_set(min_delay=1, max_delay=120)
+
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
 
