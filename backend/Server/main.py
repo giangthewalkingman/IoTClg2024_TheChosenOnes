@@ -1,4 +1,5 @@
 import json
+import subprocess
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process
@@ -2048,3 +2049,5 @@ if __name__ == '__main__':
     weather_process.start()
 
     app.run(debug=True)
+    # Call server_publish.py
+    subprocess.Popen(['python', 'server_publish.py'])
