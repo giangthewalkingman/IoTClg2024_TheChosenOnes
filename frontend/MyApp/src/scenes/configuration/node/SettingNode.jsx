@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Backdrop, Paper, Typography, Grid, TextField, Button } from "@mui/material";
 import InputBox from '../../../components/InputBox';
+import { host } from '../../../App';
 
 const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
     const [formData, setFormData] = useState({ ...nodeData });
@@ -24,10 +25,43 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
         }));
     };
 
-    const handleSettingsNode = () => {
+    const handleSettingsNode = (e) => {
         // Handle save logic here
+				const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+				let url = ''
+				if (type === 'gateways') url = `http://${host}/registration_gateway/update`
+        else if (type === 'sensors') url = `http://${host}/registration_sensor/update/${formData.sensor_id}`
+        else if (type === 'energy sensors') url = `http://${host}/registration_em/update/${formData.em_id}`
+        else if (type === 'fan nodes') url = `http://${host}/registration_fan/update/${formData.fan_id}`
+        else if (type === 'AC nodes') url = `http://${host}/registration_ac/update/${formData.ac_id}`
+				update_node_data(formData, url)
         handleClose();
     };
+
+		const update_node_data = async (data, url) => {
+      try {
+          const update_data_response = await fetch(url, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(data)
+            });
+    
+          if (update_data_response.status == 200) {
+            const update_data_json = await update_data_response.json();
+            alert('Success update node infomation!');
+          } else {
+            alert('Update node failed!');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+		}
 
     const editableFields = Object.keys(nodeData)
 

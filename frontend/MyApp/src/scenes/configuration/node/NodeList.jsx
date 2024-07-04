@@ -8,12 +8,14 @@ import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import DeleteNode from './DeleteNode';
 
 const NodeList = ({ roomIdForNodeConfig }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [sensorNodeData, setSensorNodeData] = useState([]);
-    const [energyNodeData, setEnergyNodeData] = useState([]);
-    const [fanNodeData, setFanNodeData] = useState([]);
-    const [airNodeData, setAirNodeData] = useState([]);
-    const [gatewayData, setGatewayData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [sensorNodeData, setSensorNodeData] = useState([{"gateway_id": null, "sensor_id": null, "x_pos": null, "y_pos": null,}]);
+    const [energyNodeData, setEnergyNodeData] = useState([{"em_id": null, "room_id": null, "x_pos": null, "y_pos": null,}]);
+    const [fanNodeData, setFanNodeData] = useState([{"gateway_id": null, "fan_id": null, "x_pos": null, "y_pos": null, "model": null, 'num_device': null,
+                                                'num_sensor_link': null, "sensor_link": '', "x_pos_device": '', "y_pos_device": null,}]);
+    const [airNodeData, setAirNodeData] = useState([{"gateway_id": null, "ac_id": null, "x_pos": null, "y_pos": null, "model": null, 'num_device': null,
+                                                'num_sensor_link': null, "sensor_link": '', "x_pos_device": '', "y_pos_device": null,}]);
+    const [gatewayData, setGatewayData] = useState([{'gateway_id': null, 'x_pos': null, 'y_pos': null, 'description': null,}]);
     const [openSetting, setOpenSetting] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
     const [selectedNodeData, setSelectedNodeData] = useState({});
@@ -29,6 +31,7 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 
     const handleCloseSetting = () => {
         setOpenSetting(false);
+        setIsLoading(true)
     };
 
     const handleOpenDelete = (nodeData, type) => {
@@ -39,12 +42,13 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 
     const handleCloseDelete = () => {
         setOpenDelete(false);
+        setIsLoading(true);
     };
 
     const TableContent = ({ node_data, type }) => {
-		if (node_data.length === 0) return (<></>);
-		const props = Object.keys(node_data[0]).filter(key => (key !== 'x_pos_device' && key !== 'y_pos_device' && key !== 'sensor_link'));
-	
+        // if (isLoading === true) return <h1>Loading...</h1>
+		const props = node_data !== undefined ? Object.keys(node_data[0]).filter(key => (key !== 'x_pos_device' && key !== 'y_pos_device' && key !== 'sensor_link')) : [];
+        if (node_data !== undefined)
 		return (
 			<Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', boxShadow: 0 }}>
 				<Header title={`All ${type} in room ${roomIdForNodeConfig}`} fontSize="20px" />
@@ -118,98 +122,53 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 				</Table>
 			</Paper>
 		)
+        else return <h1>Error</h1>
 	}
 	
 
     const get_node_data = async (url) => {
         try {
-            const data_response = {
-                'sensor': [
-                    {
-                        "room_id": 1,
-                        "gateway_id": 1,
-                        "sensor_id": 1,
-                        "x_pos": 100,
-                        "y_pos": 100,
-                    },
-                    {
-                        "room_id": 1,
-                        "sensor_id": 2,
-                        "gateway_id": 2,
-                        "x_pos": 50,
-                        "y_pos": 200,
-                    },
-                    {
-                        "room_id": 1,
-                        "sensor_id": 3,
-                        "gateway_id": 1,
-                        "x_pos": -1,
-                        "y_pos": -1,
-                    }
-                ],
-                'energy': [
-                    {
-                        "room_id": 1,
-                        "gateway_id": 1,
-                        "em_id": 1,
-                        "x_pos": 0,
-                        "y_pos": 0,
-                    }
-                ],
-                'fan': [
-                    {
-                        "room_id": 1,
-                        "gateway_id": 1,
-                        "fan_id": 1,
-                        "x_pos": 20,
-                        "y_pos": 400,
-                        "model": "manual",
-                        'num_device': 0,
-                        'num_sensor_link': 1,
-                        "sensor_link": '',
-                        "x_pos_device": '',
-                        "y_pos_device": '',
-                    },
-                    {
-                        "room_id": 1,
-                        "gateway_id": 1,
-                        "fan_id": 2,
-                        "x_pos": -1,
-                        "y_pos": -1,
-                        "model": "manual",
-                        'num_sensor_link': 1,
-                        'num_device': 0,
-                        "sensor_link": '',
-                        "x_pos_device": '',
-                        "y_pos_device": '',
-                    }
-                ],
-                'ac': [
-                    {
-                        "room_id": 1, "gateway_id": 1, "ac_id": 1, 
-                        "x_pos": -1, "y_pos": -1,
-                        "model": "manual",
-                        'num_device': 0,
-                        'num_sensor_link': 1,
-                        "sensor_link": '',
-                        "x_pos_device": '',
-                        "y_pos_device": '',
-                    }
-                ],
-                'gateway': [
-                    {
-                        'gateway_id': 1,
-                        'x_pos': 100, 'y_pos': 100,
-                        'description': 'Gateway 1',
-                    }
-                ]
-            };
-
-            if (1) {
-                const data_json = data_response;
+            const data_response = await fetch(url)
+            if (data_response.status === 200) {
+                const data_json = await data_response.json();
                 if (data_json) {
+                    const countDigitsInString = (inputString) => {
+                        let numbers = inputString.split(", ");
+                        let digitCount = 0;
+                        for (let number of numbers) {
+                            digitCount += number.trim().length;
+                        }
+                        return digitCount;
+                    }
+
+                    for (let item of data_json.fan) {
+                        let numbers = item.sensor_link.split(", ");
+                        let digitCount = 0;
+                        for (let number of numbers) {
+                            digitCount += number.trim().length;
+                        }
+                        item.num_sensor_link = digitCount
+                        digitCount = 0;
+                        for (let number of numbers) {
+                            digitCount += number.trim().length;
+                        }
+                        item.num_device = digitCount
+                    }
+                    for (let item of data_json.ac) {
+                        let numbers = item.sensor_link.split(", ");
+                        let digitCount = 0;
+                        for (let number of numbers) {
+                            digitCount += number.trim().length;
+                        }
+                        item.num_sensor_link = digitCount
+                        digitCount = 0;
+                        for (let number of numbers) {
+                            digitCount += number.trim().length;
+                        }
+                        item.num_device = digitCount
+                    }
                     setSensorNodeData(data_json.sensor)
-                    setEnergyNodeData(data_json.energy)
+                    setEnergyNodeData(data_json.em)
                     setFanNodeData(data_json.fan)
                     setAirNodeData(data_json.ac)
                     setGatewayData(data_json.gateway)
@@ -228,7 +187,15 @@ const NodeList = ({ roomIdForNodeConfig }) => {
 
     useEffect(() => {
         get_node_data(node_data_url)
-    }, [])
+        // if (isLoading) {
+        //     get_node_data(node_data_url)
+        //   } else {
+        //     const timer = setTimeout(() => {
+        //         get_node_data(node_data_url)
+        //     }, 10000);
+        //     return () => clearTimeout(timer);
+        //   }
+    }, [isLoading])
 
     return (
         <Grid container sx={{ display: 'flex', flexDirection: 'column', overflow: 'auto', }} display='flex' rowSpacing={2}>

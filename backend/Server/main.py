@@ -423,8 +423,8 @@ def insert_registration_ac():
 
     return jsonify({"message": "Registration AC added successfully"}), 201
 
-@app.route('/registration_ac/update/<room_id>/<ac_id>', methods=['PUT'])
-def update_registration_ac(room_id, ac_id):
+@app.route('/registration_ac/update/<ac_id>', methods=['PUT'])
+def update_registration_ac(ac_id):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
@@ -436,7 +436,6 @@ def update_registration_ac(room_id, ac_id):
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
-    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -457,18 +456,14 @@ def update_registration_ac(room_id, ac_id):
         query_parts.append("sensor_link = %s")
         update_values.append(sensor_link)
 
-    if gateway_id:
-        query_parts.append("gateway_id = %s")
-        update_values.append(gateway_id)
-
     if not query_parts:
         cursor.close()
         db.close()
         return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
 
     # Cập nhật dựa trên room_id và ac_id hiện tại
-    query = f"UPDATE registration_ac SET {', '.join(query_parts)} WHERE room_id = %s AND ac_id = %s"
-    update_values.extend([room_id, ac_id])
+    query = f"UPDATE registration_ac SET {', '.join(query_parts)} WHERE ac_id = %s"
+    update_values.extend([ac_id])
 
     try:
         cursor.execute(query, tuple(update_values))
@@ -738,8 +733,8 @@ def insert_registration_fan():
 
     return jsonify({"message": "Registration Fan added successfully"}), 201  # 201 (Created)
 
-@app.route('/registration_fan/update/<room_id>/<fan_id>', methods=['PUT'])
-def update_registration_fan(room_id, fan_id):
+@app.route('/registration_fan/update/<fan_id>', methods=['PUT'])
+def update_registration_fan(fan_id):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
@@ -751,7 +746,6 @@ def update_registration_fan(room_id, fan_id):
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
-    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -772,18 +766,14 @@ def update_registration_fan(room_id, fan_id):
         query_parts.append("sensor_link = %s")
         update_values.append(sensor_link)
 
-    if gateway_id:
-        query_parts.append("gateway_id = %s")
-        update_values.append(gateway_id)
-
     if not query_parts:
         cursor.close()
         db.close()
         return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
 
     # Cập nhật dựa trên room_id và ac_id hiện tại
-    query = f"UPDATE registration_fan SET {', '.join(query_parts)} WHERE room_id = %s AND fan_id = %s"
-    update_values.extend([room_id, fan_id])
+    query = f"UPDATE registration_fan SET {', '.join(query_parts)} WHERE fan_id = %s"
+    update_values.extend([fan_id])
 
     try:
         cursor.execute(query, tuple(update_values))
@@ -1175,8 +1165,8 @@ def insert_registration_sensor():
 
     return jsonify({"message": "Registration sensor node added successfully"}), 201  # 201 (Created)
 
-@app.route('/registration_sensor/update/<room_id>/<sensor_id>', methods=['PUT'])
-def update_registration_sensor(room_id, sensor_id):
+@app.route('/registration_sensor/update/<sensor_id>', methods=['PUT'])
+def update_registration_sensor(sensor_id):
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
@@ -1186,7 +1176,6 @@ def update_registration_sensor(room_id, sensor_id):
     # Lấy dữ liệu đầu vào từ yêu cầu PUT
     x_pos = request.json.get('x_pos')
     y_pos = request.json.get('y_pos')
-    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -1199,18 +1188,14 @@ def update_registration_sensor(room_id, sensor_id):
         query_parts.append("y_pos = %s")
         update_values.append(y_pos)
 
-    if gateway_id:
-        query_parts.append("gateway_id = %s")
-        update_values.append(gateway_id)
-
     if not query_parts:
         cursor.close()
         db.close()
         return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
 
     # Cập nhật dựa trên room_id và ac_id hiện tại
-    query = f"UPDATE registration_sensor SET {', '.join(query_parts)} WHERE room_id = %s AND sensor_id = %s"
-    update_values.extend([room_id, sensor_id])
+    query = f"UPDATE registration_sensor SET {', '.join(query_parts)} WHERE sensor_id = %s"
+    update_values.extend(sensor_id)
 
     try:
         cursor.execute(query, tuple(update_values))
@@ -1226,6 +1211,53 @@ def update_registration_sensor(room_id, sensor_id):
         cursor.close()
         db.close()
         return jsonify({"error": "Failed to update Registration sensor"}), 500
+
+@app.route('/registration_em/update/<em_id>', methods=['PUT'])
+def update_registration_em(em_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    # Lấy dữ liệu đầu vào từ yêu cầu PUT
+    x_pos = request.json.get('x_pos')
+    y_pos = request.json.get('y_pos')
+
+    update_values = []
+    query_parts = []
+
+    if x_pos:
+        query_parts.append("x_pos = %s")
+        update_values.append(x_pos)
+
+    if y_pos:
+        query_parts.append("y_pos = %s")
+        update_values.append(y_pos)
+
+    if not query_parts:
+        cursor.close()
+        db.close()
+        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
+
+    # Cập nhật dựa trên room_id và ac_id hiện tại
+    query = f"UPDATE registration_sensor SET {', '.join(query_parts)} WHERE em_id = %s"
+    update_values.extend(em_id)
+
+    try:
+        cursor.execute(query, tuple(update_values))
+        db.commit()
+
+        cursor.close()
+        db.close()
+
+        return jsonify({"message": "Registration energy sensor updated successfully"}), 200  # 200 (OK)
+
+    except Error as e:
+        print("Error during update:", e)  # Ghi lại lỗi
+        cursor.close()
+        db.close()
+        return jsonify({"error": "Failed to update Registration energy sensor"}), 500
 
 @app.route('/registration_sensor/delete/<room_id>/<sensor_id>', methods=['DELETE'])
 def delete_registration_sensor(room_id, sensor_id):
@@ -1477,7 +1509,6 @@ def getlast_heatmap(room_id):
             b.temp, 
             a.x_pos, 
             a.y_pos,
-            a.gateway_id
         FROM 
             registration_sensor a 
         JOIN 
@@ -1569,7 +1600,7 @@ def get_all_gateway():
 
     return jsonify(result), 200  # 200 (OK)
 
-@app.route('/registration_gateway/getByRoomId<room_id>', methods=['GET'])
+@app.route('/registration_gateway/getByRoomId/<room_id>', methods=['GET'])
 def get_gateway_by_room_id(room_id):
     db = create_connection()
     if db is None:
@@ -1936,23 +1967,23 @@ def get_all_nodes(room_id):
 
     try:
         # Lấy thông tin sensor nodes
-        cursor.execute("SELECT * FROM registration_sensor WHERE room_id = %s", (room_id,))
+        cursor.execute("SELECT `gateway_id`,`sensor_id`, `x_pos`, `y_pos` FROM `registration_sensor` WHERE room_id = %s", (room_id,))
         data['sensor'] = cursor.fetchall()
 
         # Lấy thông tin energy nodes (em)
-        cursor.execute("SELECT * FROM registration_em WHERE room_id = %s", (room_id,))
+        cursor.execute("SELECT `em_id`, `x_pos`, `y_pos` FROM registration_em WHERE room_id = %s", (room_id,))
         data['em'] = cursor.fetchall()
 
         # Lấy thông tin fan nodes
-        cursor.execute("SELECT * FROM registration_fan WHERE room_id = %s", (room_id,))
+        cursor.execute("SELECT `gateway_id`, `fan_id`, `x_pos`, `y_pos`, `model`, `sensor_link` FROM `registration_fan` WHERE room_id = %s", (room_id,))
         data['fan'] = cursor.fetchall()
 
         # Lấy thông tin ac nodes
-        cursor.execute("SELECT * FROM registration_ac WHERE room_id = %s", (room_id,))
+        cursor.execute("SELECT `gateway_id`, `ac_id`, `x_pos`, `y_pos`, `model`, `sensor_link` FROM `registration_ac` WHERE room_id = %s", (room_id,))
         data['ac'] = cursor.fetchall()
 
         # Lấy thông tin gateway nodes
-        cursor.execute("SELECT * FROM registration_gateway WHERE room_id = %s", (room_id,))
+        cursor.execute("SELECT `gateway_id`, `description`, `x_pos`, `y_pos` FROM `registration_gateway` WHERE room_id =  %s", (room_id,))
         data['gateway'] = cursor.fetchall()
 
     except Error as e:

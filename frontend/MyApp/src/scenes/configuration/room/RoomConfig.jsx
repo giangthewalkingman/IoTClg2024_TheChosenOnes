@@ -36,8 +36,6 @@ export default function RoomConfig({setConfig, setRoomIdForNodeConfig, setRoomSi
 
     const add_gateway_data = async (gateway_data) => {
       const add_gateway_url = `http://${host}/registration_gateway/update`
-      console.log('HERE')
-      console.log(gateway_data)
       try {
           const add_gateway_response = await fetch(add_gateway_url, {
               method: 'PUT',
