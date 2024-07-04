@@ -399,16 +399,17 @@ def insert_registration_ac():
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
+    gateway_id = request.json.get('gateway_id')
 
-    if room_id is None or x_pos is None or y_pos is None or model is None or sensor_link is None:
+    if room_id is None or x_pos is None or y_pos is None or model is None or sensor_link is None or gateway_id is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id, x_pos, y_pos, model and sensor_link are required"}), 400  # Yêu cầu không hợp lệ
+        return jsonify({"error": "room_id, x_pos, y_pos, model, gateway_id and sensor_link are required"}), 400  # Yêu cầu không hợp lệ
 
     try:
         cursor.execute(
-            "INSERT INTO registration_ac (room_id, x_pos, y_pos, model, sensor_link) VALUES (%s, %s, %s, %s, %s)",
-            (room_id, x_pos, y_pos, model, sensor_link)
+            "INSERT INTO registration_ac (room_id, x_pos, y_pos, model, sensor_link, gateway_id) VALUES (%s, %s, %s, %s, %s, %s)",
+            (room_id, x_pos, y_pos, model, sensor_link, gateway_id)
         )
         db.commit()
     except mysql.connector.Error as err:
@@ -435,6 +436,7 @@ def update_registration_ac(room_id, ac_id):
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
+    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -454,6 +456,10 @@ def update_registration_ac(room_id, ac_id):
     if sensor_link:
         query_parts.append("sensor_link = %s")
         update_values.append(sensor_link)
+
+    if gateway_id:
+        query_parts.append("gateway_id = %s")
+        update_values.append(gateway_id)
 
     if not query_parts:
         cursor.close()
@@ -716,13 +722,15 @@ def insert_registration_fan():
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
+    gateway_id = request.json.get('gateway_id')
 
-    if room_id is None or x_pos is None or y_pos is None or model is None or sensor_link is None:
+    if room_id is None or x_pos is None or y_pos is None or model is None or sensor_link is None or gateway_id is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id, x_pos, y_pos, model, sensor_link are required"}), 400  # Yêu cầu không hợp lệ
+        return jsonify({"error": "room_id, x_pos, y_pos, model, sensor_link, gateway_id are required"}), 400  # Yêu cầu không hợp lệ
 
-    cursor.execute("INSERT INTO registration_fan (room_id, x_pos, y_pos, model, sensor_link) VALUES (%s, %s, %s, %s, %s)", (room_id, x_pos, y_pos, model, sensor_link))
+    cursor.execute("INSERT INTO registration_fan (room_id, x_pos, y_pos, model, sensor_link, gateway_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                   (room_id, x_pos, y_pos, model, sensor_link, gateway_id))
     db.commit()
 
     cursor.close()
@@ -743,6 +751,7 @@ def update_registration_fan(room_id, fan_id):
     y_pos = request.json.get('y_pos')
     model = request.json.get('model')
     sensor_link = request.json.get('sensor_link')
+    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -762,6 +771,10 @@ def update_registration_fan(room_id, fan_id):
     if sensor_link:
         query_parts.append("sensor_link = %s")
         update_values.append(sensor_link)
+
+    if gateway_id:
+        query_parts.append("gateway_id = %s")
+        update_values.append(gateway_id)
 
     if not query_parts:
         cursor.close()
@@ -1147,13 +1160,14 @@ def insert_registration_sensor():
     room_id = request.json.get('room_id')
     x_pos = request.json.get('x_pos')
     y_pos = request.json.get('y_pos')
+    gateway_id = request.json.get('gateway_id')
 
-    if room_id is None or x_pos is None or y_pos is None:
+    if room_id is None or x_pos is None or y_pos is None or gateway_id is None:
         cursor.close()
         db.close()
-        return jsonify({"error": "room_id, x_pos, and y_pos are required"}), 400  # Yêu cầu không hợp lệ
+        return jsonify({"error": "room_id, x_pos, y_pos and gateway_id are required"}), 400  # Yêu cầu không hợp lệ
 
-    cursor.execute("INSERT INTO registration_sensor (room_id, x_pos, y_pos) VALUES (%s, %s, %s)", (room_id, x_pos, y_pos))
+    cursor.execute("INSERT INTO registration_sensor (room_id, x_pos, y_pos, gateway_id) VALUES (%s, %s, %s, %s)", (room_id, x_pos, y_pos, gateway_id))
     db.commit()
 
     cursor.close()
@@ -1172,6 +1186,7 @@ def update_registration_sensor(room_id, sensor_id):
     # Lấy dữ liệu đầu vào từ yêu cầu PUT
     x_pos = request.json.get('x_pos')
     y_pos = request.json.get('y_pos')
+    gateway_id = request.json.get('gateway_id')
 
     update_values = []
     query_parts = []
@@ -1183,6 +1198,10 @@ def update_registration_sensor(room_id, sensor_id):
     if y_pos:
         query_parts.append("y_pos = %s")
         update_values.append(y_pos)
+
+    if gateway_id:
+        query_parts.append("gateway_id = %s")
+        update_values.append(gateway_id)
 
     if not query_parts:
         cursor.close()
@@ -1457,7 +1476,8 @@ def getlast_heatmap(room_id):
             a.sensor_id, 
             b.temp, 
             a.x_pos, 
-            a.y_pos 
+            a.y_pos,
+            a.gateway_id
         FROM 
             registration_sensor a 
         JOIN 
