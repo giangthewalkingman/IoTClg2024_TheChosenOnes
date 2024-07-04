@@ -21,7 +21,6 @@ CREATE TABLE `schema_server`.`room` (
     ON UPDATE RESTRICT
 ) ENGINE = InnoDB;
 
-
 -- Tạo bảng registration_ac
 CREATE TABLE `schema_server`.`registration_ac` (
   `room_id` INT NOT NULL,
@@ -182,3 +181,7 @@ CREATE TABLE `schema_server`.`ac_device` (
 `ac_id` INT NOT NULL ,
 `x_pos_device` REAL NOT NULL ,
 `y_pos_device` REAL NOT NULL ) ENGINE = InnoDB;
+
+ALTER TABLE `registration_ac` ADD `gateway_id` INT NOT NULL;
+ALTER TABLE `registration_sensor` ADD `gateway_id` INT NOT NULL;
+ALTER TABLE `registration_fan` ADD `gateway_id` INT NOT NULL;

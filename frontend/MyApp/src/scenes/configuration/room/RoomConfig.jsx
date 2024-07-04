@@ -35,23 +35,23 @@ export default function RoomConfig({setConfig, setRoomIdForNodeConfig, setRoomSi
     }
 
     const add_gateway_data = async (gateway_data) => {
-      const add_gateway_url = `http://${host}/registration_gateway/insert`
+      const add_gateway_url = `http://${host}/registration_gateway/update`
       console.log('HERE')
       console.log(gateway_data)
       try {
           const add_gateway_response = await fetch(add_gateway_url, {
-              method: 'POST',
+              method: 'PUT',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify(gateway_data)
             });
     
-          if (add_gateway_response.ok) {
+          if (add_gateway_response.status == 200) {
             const add_gateway_json = await add_gateway_response.json();
-            console.log('Success:', add_gateway_json);
+            alert('Success add gateway!');
           } else {
-            console.error('Error:', add_gateway_response.statusText);
+            alert('Add gateway failed due to unknown MAC address!');
           }
         } catch (error) {
           console.error('Error:', error);

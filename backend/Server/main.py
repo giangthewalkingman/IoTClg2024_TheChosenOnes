@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
-from backend.Server.mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, ack_info
+from mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, ack_info
 
 app = Flask(__name__)
 CORS(app)
@@ -1580,7 +1580,7 @@ def insert_gateway():
     y_pos = request.json.get('y_pos')
 
     # Kiểm tra xem các trường bắt buộc có tồn tại và có kiểu dữ liệu hợp lệ không
-    if any(v is None for v in (room_id, connected, mac, description, x_pos, y_pos)):
+    if any(v is None for v in (room_id, mac, x_pos, y_pos)):
         cursor.close()
         db.close()
         return jsonify({"error": "Missing required fields"}), 400  # Bad Request
@@ -1589,7 +1589,7 @@ def insert_gateway():
         # Thêm dữ liệu vào bảng pmv_table
         query = ("INSERT INTO registration_gateway (room_id, connected, mac, description, x_pos, y_pos) "
                  "VALUES (%s, %s, %s, %s, %s, %s)")
-        cursor.execute(query, (room_id, connected, mac, description, x_pos, y_pos))
+        cursor.execute(query, (room_id, 1, mac, mac, x_pos, y_pos))
         db.commit()
     except mysql.connector.Error as err:
         db.rollback()
@@ -1600,53 +1600,38 @@ def insert_gateway():
 
     return jsonify({"message": "gateway added successfully"}), 201  # 201 (Created)
 
-@app.route('/registration_gateway/update/<room_id>/<gateway_id>', methods=['PUT'])
-def update_gateway(room_id, gateway_id):
+@app.route('/registration_gateway/update', methods=['PUT'])
+def update_gateway():
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500
-
-    cursor = db.cursor()
-    connected = request.json.get('connected')
+    
+    gateway_id = request.json.get('gateway_id')
+    connected = 1
+    room_id = request.json.get('room_id')
     mac = request.json.get('mac')
     description = request.json.get('description')
+    if description is None:
+        description = mac
     x_pos = request.json.get('x_pos')
     y_pos = request.json.get('y_pos')
 
-    update_values = []
-    query_parts = []
+    cursor = db.cursor()
+    if mac is None:
+        cursor.execute("SELECT * FROM `registration_gateway` WHERE gateway_id = %s", (gateway_id,))
+    else:
+        cursor.execute("SELECT * FROM `registration_gateway` WHERE mac = %s", (mac,))
+    key = [desc[0] for desc in cursor.description]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
+    if len(check_mac) == 0:
+        return jsonify({"error": "No MAC address or gateway ID found"}), 400
 
-    if connected:
-        query_parts.append("connected = %s")
-        update_values.append(connected)
-
-    if mac:
-        query_parts.append("mac = %s")
-        update_values.append(mac)
-
-    if description:
-        query_parts.append("description = %s")
-        update_values.append(description)
-
-    if x_pos:
-        query_parts.append("x_pos = %s")
-        update_values.append(x_pos)
-
-    if y_pos:
-        query_parts.append("y_pos = %s")
-        update_values.append(y_pos)
-
-    if not query_parts:
-        cursor.close()
-        db.close()
-        return jsonify({"error": "No fields to update"}), 400  # Nếu không có gì để cập nhật
-
-    # Cập nhật dựa trên room_id và ac_id hiện tại
-    query = f"UPDATE registration_gateway SET {', '.join(query_parts)} WHERE room_id = %s AND gateway_id = %s"
-    update_values.extend([room_id, gateway_id])
-
+    # Cập nhật dựa trên mac và ac_id hiện tại
     try:
-        cursor.execute(query, tuple(update_values))
+        if mac is None:
+            cursor.execute("UPDATE registration_gateway SET `description` = %s, `x_pos` = %s,`y_pos` = %s WHERE gateway_id = %s", (description, x_pos, y_pos, gateway_id,))
+        else:
+            cursor.execute("UPDATE registration_gateway SET `room_id` = %s, `x_pos` = %s,`y_pos` = %s, `connected` = %s WHERE mac = %s", (room_id, x_pos, y_pos, connected, mac,))
         db.commit()
 
         cursor.close()
