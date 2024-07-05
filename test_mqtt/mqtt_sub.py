@@ -1,7 +1,7 @@
 import paho.mqtt.client as mqtt
 
 # Define the MQTT broker details
-broker = "test.mosquitto.org"
+broker = "0.0.0.0"
 port = 1883
 
 # Define the topic to subscribe to

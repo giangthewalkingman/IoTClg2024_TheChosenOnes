@@ -1,7 +1,7 @@
 import json
 import paho.mqtt.client as mqtt
 
-BROKER = 127.0.0.1
+BROKER = "0.0.0.0"
 PORT = 1883
 
 # Define the MQTT broker details
