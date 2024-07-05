@@ -12,12 +12,18 @@ mqtt_topic_connect_key = 'gateway/connect_key'
 mqtt_topic_connect_key_ack = 'server/connect_key_ack'
 mqtt_topic_keepalive = 'gateway/keepalive'
 mqtt_topic_keepalive_ack = 'server/keepalive_ack'
+mqtt_topic_control_fan = 'gateway/fan/control'
+mqtt_topic_control_fan_ack = 'server/fan/control_ack'
+mqtt_topic_control_ac = 'gateway/ac/control'
+mqtt_topic_control_ac_ack = 'server/ac/control_ack'
 
 # MQTT callbacks
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe(mqtt_topic_connect_key_ack)
     client.subscribe(mqtt_topic_keepalive_ack)
+    client.subscribe(mqtt_topic_control_fan_ack)
+    client.subscribe(mqtt_topic_control_ac_ack)
 
 def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
@@ -25,6 +31,10 @@ def on_message(client, userdata, msg):
         handle_ack(json.loads(msg.payload))
     elif msg.topic == mqtt_topic_keepalive_ack:
         handle_keepalive_ack(json.loads(msg.payload))
+    elif msg.topic == mqtt_topic_control_fan_ack:
+        handle_fan_control_ack(json.loads(msg.payload))
+    elif msg.topic == mqtt_topic_control_ac_ack:
+        handle_ac_control_ack(json.loads(msg.payload))
 
 # Global variables for ACK
 ack_received = threading.Event()
@@ -36,6 +46,16 @@ def handle_ack(message):
     ack_received.set()
 
 def handle_keepalive_ack(message):
+    global ack_info
+    ack_info = message
+    ack_received.set()
+
+def handle_fan_control_ack(message):
+    global ack_info
+    ack_info = message
+    ack_received.set()
+
+def handle_ac_control_ack(message):
     global ack_info
     ack_info = message
     ack_received.set()

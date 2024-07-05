@@ -185,3 +185,4 @@ CREATE TABLE `schema_server`.`ac_device` (
 ALTER TABLE `registration_ac` ADD `gateway_id` INT NOT NULL;
 ALTER TABLE `registration_sensor` ADD `gateway_id` INT NOT NULL;
 ALTER TABLE `registration_fan` ADD `gateway_id` INT NOT NULL;
+ALTER TABLE `registration_em` ADD `gateway_id` INT NOT NULL;

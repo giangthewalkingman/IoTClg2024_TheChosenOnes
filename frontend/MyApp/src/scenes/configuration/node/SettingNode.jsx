@@ -91,6 +91,23 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
                                 />
                             </Grid>
                         )
+                        else if (field === 'description')
+                            return (
+                                <Grid item xs={12} md={6} key={field}>
+                                    <Typography variant='h4' mb={1}>
+                                        {field.replace('_', ' ').toUpperCase()}
+                                    </Typography>
+                                    <InputBox 
+                                        required
+                                        id={field}
+                                        name={field}
+                                        placeholder={field.replace('_', ' ').toUpperCase()}
+                                        value={formData[field]}
+                                        onChange={handleInputChange}
+                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9A-Za-z ]/g, '') }}
+                                    />
+                                </Grid>
+                            )
                         else if (field === 'sensor_link' || field === 'x_pos_device' || field === 'y_pos_device')
                             return (
                                 <Grid item xs={12} md={6} key={field}>
@@ -104,7 +121,7 @@ const SettingNode = ({ openSetting, handleClose, nodeData, type }) => {
                                         placeholder={field.replace('_', ' ').toUpperCase()}
                                         value={formData[field]}
                                         onChange={handleInputChange}
-                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9 ,]/g, '') }}
+                                        onInput={(e) => { e.target.value = e.target.value.replace(/[^0-9,]/g, '') }}
                                     />
                                 </Grid>
                             )

@@ -10,7 +10,7 @@ from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
-from mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, ack_info
+from mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, mqtt_topic_control_fan, mqtt_topic_control_ac, ack_info
 
 app = Flask(__name__)
 CORS(app)
@@ -1508,7 +1508,7 @@ def getlast_heatmap(room_id):
             a.sensor_id, 
             b.temp, 
             a.x_pos, 
-            a.y_pos,
+            a.y_pos
         FROM 
             registration_sensor a 
         JOIN 
@@ -1673,7 +1673,8 @@ def update_gateway():
     else:
         cursor.execute("SELECT * FROM `registration_gateway` WHERE mac = %s", (mac,))
     key = [desc[0] for desc in cursor.description]
-    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchone()]
+
     if len(check_mac) == 0:
         return jsonify({"error": "No MAC address or gateway ID found"}), 400
 
@@ -2028,7 +2029,7 @@ def delete_fan_device(fan_id):
         db.close()
         return jsonify({"error": "Failed to delete fan_device", "details": str(e)}), 500
 
-@app.route('/connect_key', methods=['GET'])
+@app.route('/connect_key', methods=['POST'])
 def connect_key():
     data = request.json
     connect_key = data.get('connect_key')
@@ -2079,6 +2080,155 @@ def connect_key():
         return jsonify({"error": "No ack received from gateway"}), 504  # Gateway Timeout
 
     return jsonify({"message": "Install code sent to gateway", "ack": ack_info}), 200  # OK
+
+@app.route('/fan/control', methods=['POST'])
+def control_fan():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    fan_id = request.json.get('id')
+    set_value = request.json.get('set_value')
+    control_mode = request.json.get('control_mode')
+    state = request.json.get('state')
+
+    if set_value is None or control_mode is None or state is None:
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    cursor.execute("""SELECT rg.mac FROM registration_fan rf
+                    LEFT JOIN registration_gateway rg
+                    ON rg.gateway_id = rf.gateway_id
+                    WHERE rf.fan_id = %s""", (fan_id,))
+    key = [desc[0] for desc in cursor.description]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
+    print(check_mac)
+    print(fan_id)
+    if len(check_mac) == 0:
+        return jsonify({"error": "Control failed due to unknown gateway"}), 400
+
+    cursor.close()
+    db.close()
+
+    # Prepare MQTT message
+    mqtt_message = {
+        "operator": "fan_control",
+        "status": 1,
+        "info": {
+            "mac": check_mac[0]["mac"],
+            "fan_id": fan_id,
+            "set_value": set_value,
+            "control_mode": control_mode,
+            "state": state,
+        }
+    }
+
+    ack_received.clear()
+    mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
+
+    # Wait for ack
+    if not ack_received.wait(timeout=300):  # 5 minutes timeout
+        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
+
+    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
+
+@app.route('/ac/control', methods=['POST'])
+def control_ac():
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    ac_id = request.json.get('id')
+    set_value = request.json.get('set_value')
+    control_mode = request.json.get('control_mode')
+    state = request.json.get('state')
+
+    if set_value is None or control_mode is None or state is None:
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    cursor.execute("""SELECT rg.mac FROM registration_ac ra
+                    LEFT JOIN registration_gateway rg
+                    ON rg.gateway_id = ra.gateway_id
+                    WHERE ra.ac_id = %s""", (ac_id,))
+    key = [desc[0] for desc in cursor.description]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
+    if len(check_mac) == 0:
+        return jsonify({"error": "Control failed due to unknown gateway"}), 400
+
+    cursor.close()
+    db.close()
+
+    # Prepare MQTT message
+    mqtt_message = {
+        "operator": "ac_control",
+        "status": 1,
+        "info": {
+            "mac": check_mac[0]["mac"],
+            "ac_id": ac_id,
+            "set_value": set_value,
+            "control_mode": control_mode,
+            "state": state,
+        }
+    }
+
+    ack_received.clear()
+    mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
+
+    # Wait for ack
+    if not ack_received.wait(timeout=300):  # 5 minutes timeout
+        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
+
+    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
+
+@app.route('/pmv/control/<room_id>', methods=['POST'])
+def send_env_pmv(room_id):
+    db = create_connection()
+    if db is None:
+        return jsonify({"error": "Unable to connect to database"}), 500  # Lỗi kết nối
+
+    cursor = db.cursor()
+
+    met = request.json.get('met')
+    clo = request.json.get('clo')
+    pmv_ref = request.json.get('pmv_ref')
+
+    if met is None or clo is None or pmv_ref is None:
+        return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+
+    cursor.execute("""SELECT `mac` FROM `registration_gateway` WHERE room_id = %s""", (room_id,))
+    key = [desc[0] for desc in cursor.description]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
+    if len(check_mac) == 0:
+        return jsonify({"error": "Control failed due to unknown gateway"}), 400
+
+    cursor.close()
+    db.close()
+
+    # Prepare MQTT message
+
+    ack_received.clear()
+    for mac in check_mac:
+        mqtt_message = {
+            "operator": "env_params_setting",
+            "status": 1,
+            "info": {
+                "mac": mac["mac"],
+                "met": met,
+                "clo": clo,
+                "pmv_ref": pmv_ref,
+            }
+        }
+        mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
+
+    # ???? nhan va dem ack ve ntn, hoac bo ack
+    # # Wait for ack
+    # if not ack_received.wait(timeout=300):  # 5 minutes timeout
+    #     return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
+
+    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
 
 if __name__ == '__main__':
     weather_process = Process(target=schedule_weather_insert)

@@ -5,10 +5,11 @@ import { useTheme } from "@emotion/react";
 import { styled, Slider } from "@mui/material";
 import MuiInput from '@mui/material/Input';
 
-const ActuatorList = ({ actuator, rows }) => {
+const ActuatorList = ({ actuator, rows, url }) => {
   const theme = useTheme();
   const [targetValues, setTargetValues] = useState({});
   const [controlModes, setControlModes] = useState({});
+  const [stateValues, setStateValues] = useState({});
 
   const Circle = styled('div')(({ theme, state }) => ({
     width: 20,
@@ -29,7 +30,35 @@ const ActuatorList = ({ actuator, rows }) => {
     { value: 1, mode: 'Auto' },
   ];
 
+  const state_list = [
+    { value: 0, mode: 'Off' },
+    { value: 1, mode: 'On' },
+  ]
+
   const control_mode = actuator === 'air_con' ? air_con_control_mode : fan_control_mode;
+
+  const send_control_command = async (url, actuator, control_data) => {
+    try {
+        const control_data_request = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(control_data)
+          });
+  
+        if (control_data_request.status == 200) {
+          if (actuator === 'air_con')
+            alert('Send AC control request successfully!');
+          else
+            alert('Send fan control request successfully!');
+        } else {
+          alert('Send control failed!');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+  }
 
   useEffect(() => {
     const initialTargetValues = rows.reduce((acc, row) => {
@@ -47,6 +76,14 @@ const ActuatorList = ({ actuator, rows }) => {
     setControlModes(initialControlModes);
     console.log('SET CONTROL MODE')
     console.log(initialControlModes)
+
+    const initialState = rows.reduce((acc, row) => {
+      acc[row.id] = row.set_state; // Default control mode for Air Conditioner or Actuator
+      return acc;
+    }, {});
+    setStateValues(initialState);
+    console.log('SET STATE')
+    console.log(initialState)
   }, [actuator]);
 
   const handleSliderChange = (id, newValue) => {
@@ -82,6 +119,13 @@ const ActuatorList = ({ actuator, rows }) => {
 
   const handleControlModeChange = (id, mode) => {
     setControlModes((prevModes) => ({
+      ...prevModes,
+      [id]: mode,
+    }));
+  };
+
+  const handleStateChange = (id, mode) => {
+    setStateValues((prevModes) => ({
       ...prevModes,
       [id]: mode,
     }));
@@ -159,6 +203,37 @@ const ActuatorList = ({ actuator, rows }) => {
       ),
     },
     {
+      field: 'set_state', 
+      headerName: 'Switch ON/OFF',
+      flex: 0.4,
+      align: 'center', headerAlign: 'center',
+      renderCell: (params) => (
+        <Stack direction='row' spacing={1} justifyContent='center' alignItems='center'>
+          {state_list.map((value) => (
+            <Button
+              key={value.value}
+              sx={{
+                "min-width": "30px",
+                fontSize: "16px",
+                fontWeight: "bold",
+              }}
+              style={{
+                borderColor: stateValues[params.row.id] === value.value ? theme.palette.background.paper : theme.palette.text.primary,
+                backgroundColor: stateValues[params.row.id] === value.value ? theme.palette.text.primary : theme.palette.background.paper,
+                color: stateValues[params.row.id] === value.value ? theme.palette.background.paper : theme.palette.text.primary,
+              }}
+              size="small"
+              value={value.value}
+              variant="outlined"
+              onClick={() => handleStateChange(params.row.id, value.value)}
+            >
+              {value.mode}
+            </Button>
+          ))}
+        </Stack>
+      ),
+    },
+    {
       field: 'button',
       headerName: 'Confirm',
       flex: 0.15,
@@ -179,6 +254,13 @@ const ActuatorList = ({ actuator, rows }) => {
           variant='outlined'
           onClick={() => {
             console.log(`Submitted value for row ${params.row.id}: ${targetValues[params.row.id]}`);
+            let data ={
+              'id': params.row.id,
+              'set_value': targetValues[params.row.id],
+              'control_mode': controlModes[params.row.id],
+              'state': stateValues[params.row.id],
+            }
+            send_control_command(url, actuator, data)
           }}
         >
           Submit
@@ -196,22 +278,8 @@ const ActuatorList = ({ actuator, rows }) => {
     },
   ];
 
-  // const rows = [
-  //   { id: 1, value: 10, set_value: 20, control_mode: 0, state: 1 },
-  //   { id: 2, value: 20, set_value: 21, control_mode: 1, state: 1 },
-  //   { id: 3, value: 30, set_value: 22, control_mode: 1, state: 0 },
-  //   { id: 4, value: 40, set_value: 23, control_mode: 0, state: 1 },
-  //   { id: 5, value: 50, set_value: 24, control_mode: 2, state: 0 },
-  //   { id: 6, value: 60, set_value: 25, control_mode: 0, state: 1 },
-  //   { id: 7, value: 70, set_value: 26, control_mode: 1, state: 0 },
-  //   { id: 8, value: 80, set_value: 27, control_mode: 1, state: 0 },
-  //   { id: 9, value: 90, set_value: 28, control_mode: 0, state: 1 },
-  //   { id: 10, value: 110, set_value: 29, control_mode: 1, state: 1 },
-  //   { id: 11, value: 120, set_value: 30, control_mode: 1, state: 1 },
-  // ];
-
   return (
-    <Grid container item px={1} xs={12} lg={6}>
+    <Grid container item px={1} xs={12} lg={12}>
       <Grid container item direction='flex' flexDirection='column'>
         <Grid item textAlign='left' py={2}>
           <Typography variant="h3" fontWeight='bold'>
