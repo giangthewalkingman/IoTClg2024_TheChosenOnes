@@ -1,8 +1,9 @@
 import time
 import mysql.connector
 import paho.mqtt.client as mqtt
+from getmac import get_mac_address
 
-MAC = '192.168.0.1'
+MAC = get_mac_address()     # MAC address here
 
 # Cấu hình MySQL
 MYSQL_HOST = 'localhost'
@@ -11,7 +12,7 @@ MYSQL_PASSWORD = ''
 MYSQL_DATABASE = 'schema_gateway'
 
 # Cấu hình MQTT
-MQTT_BROKER = 'test.mosquitto.org'
+MQTT_BROKER = '0.0.0.0'
 MQTT_PORT = 1883
 MQTT_TOPIC_GATEWAY_SENSORS = 'gateway/sensors'
 MQTT_TOPIC_GATEWAY_KEEPALIVE = 'gateway/keepalive'

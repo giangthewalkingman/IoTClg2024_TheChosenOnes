@@ -4,7 +4,7 @@ from mysql.connector import Error
 import paho.mqtt.client as mqtt
 
 # MQTT configurations
-mqtt_broker = 'test.mosquitto.org'  # example broker address
+mqtt_broker = '0.0.0.0'  # example broker address
 mqtt_port = 1883
 mqtt_topic_pmv = 'gateway/pmv_data'
 mqtt_topic_sensor = 'gateway/sensor_data'

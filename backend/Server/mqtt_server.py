@@ -6,7 +6,7 @@ import mysql.connector
 from mysql.connector import Error
 
 # MQTT configurations
-mqtt_broker = 'test.mosquitto.org'  # example broker address
+mqtt_broker = '0.0.0.0'  # broker IP is local machine IP
 mqtt_port = 1883
 mqtt_topic_connect_key = 'gateway/connect_key'
 mqtt_topic_connect_key_ack = 'server/connect_key_ack'
