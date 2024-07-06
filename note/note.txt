@@ -1,0 +1,69 @@
+CREATE USER 'giang_mariadb'@'localhost' IDENTIFIED BY 'k';
+mariadb -u giang_mariadb -p
+
+how to list all the databases: show databases;
+how to access a database: use <name of db>;
+how to show a table in the database: describe <name of table>;
+
+how to run the z3 gateway:
+giang@raspberrypi:~/Desktop/Z3Gateway $ ./build/debug/Z3Gateway -p /dev/ttyACM0
+
+database code:
+CREATE DATABASE iot_clg_db;
+CREATE TABLE PMVtable (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    met DOUBLE NOT NULL,
+    clo INT NOT NULL,
+    pmvref INT NOT NULL
+);
+CREATE TABLE RegistrationSensor (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+CREATE TABLE SensorNode (
+    temp DOUBLE NOT NULL,
+    humid DOUBLE NOT NULL,
+    wind DOUBLE NOT NULL,
+    pm25 INT NOT NULL,
+    time INT NOT NULL,
+    sensor_id INT NOT NULL,
+    CONSTRAINT fk_sensor_id FOREIGN KEY (sensor_id) REFERENCES RegistrationSensor (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);
+CREATE TABLE RegistrationEnergy (
+    id INT PRIMARY KEY AUTO_INCREMENT
+);
+CREATE TABLE EnergyMeasure (
+    voltage DOUBLE NOT NULL,
+    current DOUBLE NOT NULL,
+    frequency INT NOT NULL,
+    active_power DOUBLE NOT NULL,
+    power_factor DOUBLE NOT NULL,
+    time INT NOT NULL,
+    em_id INT NOT NULL,
+    CONSTRAINT fk_em_id FOREIGN KEY (em_id) REFERENCES RegistrationEnergy (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);
+CREATE TABLE RegistrationFan (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    sensor_link INT NOT NULL,
+    model VARCHAR(50) NOT NULL
+);
+CREATE TABLE Fan (
+    set_speed DOUBLE NOT NULL,
+    control_mode INT NOT NULL,
+    set_time INT NOT NULL,
+    time INT NOT NULL,
+    fan_id INT NOT NULL,
+    CONSTRAINT fk_fan_id FOREIGN KEY (fan_id) REFERENCES RegistrationFan (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);
+CREATE TABLE RegistrationAC (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    sensor_link INT NOT NULL,
+    model VARCHAR(50) NOT NULL
+);
+CREATE TABLE AirConditioner (
+    set_temp DOUBLE NOT NULL,
+    state BOOL NOT NULL,
+    control_mode BOOL NOT NULL,
+    time INT NOT NULL,
+    ac_id INT NOT NULL,
+    CONSTRAINT fk_ac_id FOREIGN KEY (ac_id) REFERENCES RegistrationAC (id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);
