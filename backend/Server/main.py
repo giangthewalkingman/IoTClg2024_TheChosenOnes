@@ -2175,7 +2175,7 @@ def control_ac():
     }
 
     ack_received.clear()
-    mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
+    mqtt_client.publish(mqtt_topic_control_ac, json.dumps(mqtt_message))
 
     # Wait for ack
     if not ack_received.wait(timeout=300):  # 5 minutes timeout

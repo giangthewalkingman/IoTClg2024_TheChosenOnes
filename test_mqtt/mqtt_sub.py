@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 from getmac import get_mac_address
 
 MAC = get_mac_address()
-print(MAC)
+print(MAC) # testing only
 
 # Define the MQTT broker details
 broker = "0.0.0.0"
