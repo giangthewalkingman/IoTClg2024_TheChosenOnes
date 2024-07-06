@@ -1,14 +1,3 @@
-CREATE USER 'giang_mariadb'@'localhost' IDENTIFIED BY 'k';
-mariadb -u giang_mariadb -p
-
-how to list all the databases: show databases;
-how to access a database: use <name of db>;
-how to show a table in the database: describe <name of table>;
-
-how to run the z3 gateway:
-giang@raspberrypi:~/Desktop/Z3Gateway $ ./build/debug/Z3Gateway -p /dev/ttyACM0
-
-database code:
 CREATE DATABASE iot_clg_db;
 CREATE TABLE PMVtable (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -68,7 +57,3 @@ CREATE TABLE AirConditioner (
     CONSTRAINT fk_ac_id FOREIGN KEY (ac_id) REFERENCES RegistrationAC (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
-
---------------------------
-How to recover lost contents after a git pull:
-git reset HEAD --hard
