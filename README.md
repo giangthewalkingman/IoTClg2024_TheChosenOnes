@@ -1,6 +1,15 @@
 # HOW TO SETUP APPLICATION ON UBUNTU
+Locate to repository directory .../IoTClg2024_TheChosenOnes
+Install Git to clone this repository
+```
+git clone https://github.com/giangthewalkingman/IoTClg2024_TheChosenOnes.git
+```
+Install git tutorial: https://www.youtube.com/watch?v=bc3_FL9zWWs
 
-## Settings up MySQL with XAMPP (later)
+## Settings up MySQL with XAMPP
+- Install XAMPP: https://www.youtube.com/watch?v=XoKUkdmfTZQ&t=82s
+- Go to phpMyAdmin, create schema_server
+- Copy text file at backend/Server/schema_server.txt to SQL terminal to create database
 
 ## Setting up Mosquitto (MQTT Broker):
 - **Ubuntu 22.04**
@@ -15,7 +24,7 @@
     ```
 
 ## Setting up Python 3.12 and Dependencies:
-- **Python 3.12**
+- **Python 3.12** install tutorial https://www.youtube.com/watch?v=OBz1uW5mmlE&t=490s
 - **Make sure you in direcory .../IoTClg2024_TheChosenOnes**
 - **Install Virtual Environment:**
   ```
@@ -40,11 +49,12 @@
   ```
 ## Settings up ReactJS
 - **Make sure dependency for ReactJS is installed**
+  Install NodeJs: https://www.youtube.com/watch?v=KtTe_ckT3iM
 - **Nagivate to folder MyApp**
   ```
   cd frontend/MyApp
   ```
-- **Install packages for UI**
+- **Install packages for UI** (for the first installation only)
   ```
   npm install
   ```
