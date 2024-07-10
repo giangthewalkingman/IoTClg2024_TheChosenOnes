@@ -9,7 +9,7 @@ broker = BROKER
 port = PORT
 
 # Define the topic to publish to
-topic = "test/topic"
+topic = "server/connect_key_ack"
 
 # Create a new MQTT client instance
 client = mqtt.Client()
@@ -21,6 +21,7 @@ client.connect(broker, port)
 def publish_message(message):
     # Convert message to JSON string
     message_json = json.dumps(message)
+    print(message_json)
     result = client.publish(topic, message_json)
     status = result[0]
     if status == 0:
@@ -29,7 +30,7 @@ def publish_message(message):
         print(f"Failed to send message to topic {topic}")
 
 # Publish a test message
-publish_message(['a', 'b', 'c'])
+publish_message({"a": 2023})
 
 # Disconnect the client
 client.disconnect()

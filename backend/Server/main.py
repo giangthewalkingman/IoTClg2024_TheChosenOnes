@@ -1,5 +1,3 @@
-import json
-import subprocess
 import time
 from datetime import datetime, timedelta
 from multiprocessing import Process
@@ -10,7 +8,8 @@ from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
-from mqtt_server import ack_received, mqtt_client, mqtt_topic_connect_key, mqtt_topic_control_fan, mqtt_topic_control_ac, ack_info
+import mqtt_server
+from mqtt_server import node_info_ack_received, ack_info
 
 app = Flask(__name__)
 CORS(app)
@@ -1658,7 +1657,7 @@ def update_gateway():
         return jsonify({"error": "Unable to connect to database"}), 500
     
     gateway_id = request.json.get('gateway_id')
-    connected = 1
+    connected = request.json.get('connected')
     room_id = request.json.get('room_id')
     mac = request.json.get('mac')
     description = request.json.get('description')
@@ -1682,10 +1681,12 @@ def update_gateway():
     try:
         if mac is None:
             cursor.execute("UPDATE registration_gateway SET `description` = %s, `x_pos` = %s,`y_pos` = %s WHERE gateway_id = %s", (description, x_pos, y_pos, gateway_id,))
+            db.commit()
         else:
-            cursor.execute("UPDATE registration_gateway SET `room_id` = %s, `x_pos` = %s,`y_pos` = %s, `connected` = %s WHERE mac = %s", (room_id, x_pos, y_pos, connected, mac,))
-        db.commit()
-
+            linking_status = mqtt_server.gatewayLinking(mac)
+            if linking_status == True:
+                cursor.execute("UPDATE registration_gateway SET `room_id` = %s, `x_pos` = %s,`y_pos` = %s, `connected` = 1, WHERE mac = %s", (room_id, x_pos, y_pos, mac,))
+                db.commit()
         cursor.close()
         db.close()
 
@@ -2061,23 +2062,16 @@ def connect_key():
     cursor.close()
     db.close()
 
-    # Prepare MQTT message
-    mqtt_message = {
-        "operator": "connect_key",
-        "status": 1,
-        "info": {
-            "mac": gateway['mac'],
-            "connect_key": connect_key,
-            "type_node": type_node
-        }
-    }
-
-    ack_received.clear()
-    mqtt_client.publish(mqtt_topic_connect_key, json.dumps(mqtt_message))
-
+    connect_result = mqtt_server.sendConnectKey(type_node, gateway["mac"], connect_key)
     # Wait for ack
-    if not ack_received.wait(timeout=300):  # 5 minutes timeout
+    if connect_result == False:  
         return jsonify({"error": "No ack received from gateway"}), 504  # Gateway Timeout
+    
+    # After sending install code, wait for ack again to confirm device connected
+    print(f"Install code {connect_key} sent to gateway")
+    node_info_ack_received.clear()
+    if not node_info_ack_received.wait(timeout=60):
+        return jsonify({"error": "Gateway network timeout"}), 408 # Request timeout
 
     return jsonify({"message": "Install code sent to gateway", "ack": ack_info}), 200  # OK
 
@@ -2096,42 +2090,27 @@ def control_fan():
 
     if set_value is None or control_mode is None or state is None:
         return jsonify({"error": "Missing required fields"}), 400  # Bad Request
+    
+    if state == 0:
+        set_value = 0
 
     cursor.execute("""SELECT rg.mac FROM registration_fan rf
                     LEFT JOIN registration_gateway rg
                     ON rg.gateway_id = rf.gateway_id
                     WHERE rf.fan_id = %s""", (fan_id,))
-    key = [desc[0] for desc in cursor.description]
-    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
-    print(check_mac)
-    print(fan_id)
-    if len(check_mac) == 0:
+    mac = cursor.fetchone()["mac"]
+    if mac is None:
         return jsonify({"error": "Control failed due to unknown gateway"}), 400
 
     cursor.close()
     db.close()
 
-    # Prepare MQTT message
-    mqtt_message = {
-        "operator": "fan_control",
-        "status": 1,
-        "info": {
-            "mac": check_mac[0]["mac"],
-            "fan_id": fan_id,
-            "set_value": set_value,
-            "control_mode": control_mode,
-            "state": state,
-        }
-    }
+    # hard code 20 minutes hybrid
+    send_result = mqtt_server.controlFan(mac, fan_id, set_value, control_mode, 20)
+    if send_result == False:
+        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504
 
-    ack_received.clear()
-    mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
-
-    # Wait for ack
-    if not ack_received.wait(timeout=300):  # 5 minutes timeout
-        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
-
-    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
+    return jsonify({"message": "Sent control request to gateway"}), 200  # OK
 
 @app.route('/ac/control', methods=['POST'])
 def control_ac():
@@ -2153,35 +2132,18 @@ def control_ac():
                     LEFT JOIN registration_gateway rg
                     ON rg.gateway_id = ra.gateway_id
                     WHERE ra.ac_id = %s""", (ac_id,))
-    key = [desc[0] for desc in cursor.description]
-    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
-    if len(check_mac) == 0:
+    mac = cursor.fetchone()["mac"]
+    if mac is None:
         return jsonify({"error": "Control failed due to unknown gateway"}), 400
 
     cursor.close()
     db.close()
 
-    # Prepare MQTT message
-    mqtt_message = {
-        "operator": "ac_control",
-        "status": 1,
-        "info": {
-            "mac": check_mac[0]["mac"],
-            "ac_id": ac_id,
-            "set_value": set_value,
-            "control_mode": control_mode,
-            "state": state,
-        }
-    }
+    send_result = mqtt_server.controlAC(mac, ac_id, set_value, control_mode, state)
+    if send_result == False:
+        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504
 
-    ack_received.clear()
-    mqtt_client.publish(mqtt_topic_control_ac, json.dumps(mqtt_message))
-
-    # Wait for ack
-    if not ack_received.wait(timeout=300):  # 5 minutes timeout
-        return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
-
-    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
+    return jsonify({"message": "Sent control request to gateway"}), 200  # OK
 
 @app.route('/pmv/control/<room_id>', methods=['POST'])
 def send_env_pmv(room_id):
@@ -2203,32 +2165,14 @@ def send_env_pmv(room_id):
     check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
     if len(check_mac) == 0:
         return jsonify({"error": "Control failed due to unknown gateway"}), 400
-
+    
     cursor.close()
     db.close()
+    sending_result = mqtt_server.sendEnvSettings(check_mac, met, clo, pmv_ref)
+    if sending_result == False:
+        return jsonify({"message": "Sent env params not successfully"}), 408  # Request Timeout
 
-    # Prepare MQTT message
-
-    ack_received.clear()
-    for mac in check_mac:
-        mqtt_message = {
-            "operator": "env_params_setting",
-            "status": 1,
-            "info": {
-                "mac": mac["mac"],
-                "met": met,
-                "clo": clo,
-                "pmv_ref": pmv_ref,
-            }
-        }
-        mqtt_client.publish(mqtt_topic_control_fan, json.dumps(mqtt_message))
-
-    # ???? nhan va dem ack ve ntn, hoac bo ack
-    # # Wait for ack
-    # if not ack_received.wait(timeout=300):  # 5 minutes timeout
-    #     return jsonify({"error": "Control request timeout due to no ack received from gateway"}), 504  # Gateway Timeout
-
-    return jsonify({"message": "Sent control request to gateway", "ack": ack_info}), 200  # OK
+    return jsonify({"message": "Sent control request to gateway"}), 200  # OK
 
 if __name__ == '__main__':
     weather_process = Process(target=schedule_weather_insert)
@@ -2236,4 +2180,4 @@ if __name__ == '__main__':
 
     app.run(debug=True)
     # Call server_publish.py
-    subprocess.Popen(['python', 'server_publish.py'])
+    # subprocess.Popen(['python', 'server_publish.py'])

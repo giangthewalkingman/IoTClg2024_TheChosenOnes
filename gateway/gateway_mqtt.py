@@ -12,10 +12,42 @@ MYSQL_PASSWORD = ''
 MYSQL_DATABASE = 'schema_gateway'
 
 # Cấu hình MQTT
-MQTT_BROKER = '0.0.0.0'
+MQTT_BROKER = '0.0.0.0' # change to local IP server
 MQTT_PORT = 1883
-MQTT_TOPIC_GATEWAY_SENSORS = 'gateway/sensors'
-MQTT_TOPIC_GATEWAY_KEEPALIVE = 'gateway/keepalive'
+
+# publish topic
+MQTT_GATEWAY_REGISTRY =         'server/connect'
+MQTT_TOPIC_CONNECT_KEY_ACK =    'server/connect_key_ack'
+MQTT_SENSOR_NODE_CONNECT =      'server/sensor/connect'
+MQTT_ENERGY_NODE_CONNECT =      'server/energy/connect'
+MQTT_FAN_NODE_CONNECT =         'server/fan/connect'
+MQTT_AC_NODE_CONNECT =          'server/ac/connect'
+MQTT_SENSOR_SEND_NODE_INFO_ACK =    'gateway/sensor/node_info'
+MQTT_ENERGY_SEND_NODE_INFO_ACK =    'gateway/energy/node_info'
+MQTT_FAN_SEND_NODE_INFO_ACK =  'gateway/energy/node_info'
+MQTT_AC_SEND_NODE_INFO_ACK =        'gateway/energy/node_info'
+MQTT_TOPIC_KEEPALIVE_ACK =          'server/keepalive_ack'
+
+MQTT_TOPIC_PMV_DATA =           'server/pmv_data'
+MQTT_TOPIC_SENSOR_DATA =        'server/sensor_data'
+MQTT_TOPIC_FAN_DATA =           'server/fan_data'
+MQTT_TOPIC_EM_DATA =            'server/energy_measure_data'
+MQTT_TOPIC_AC_DATA =            'server/air_conditioner_data'
+
+MQTT_TOPIC_CONTROL_FAN_ACK =    'server/fan/control_ack'
+MQTT_TOPIC_CONTROL_AC_ACK =     'server/ac/control_ack'
+
+# subscribe topic
+MQTT_GATEWAY_LINKING =          'gateway/permission'
+MQTT_TOPIC_CONNECT_KEY =        'gateway/connect_key'
+MQTT_TOPIC_KEEPALIVE =          'gateway/keepalive'
+MQTT_SENSOR_SEND_NODE_INFO =    'gateway/sensor/node_info'
+MQTT_ENERGY_SEND_NODE_INFO =    'gateway/energy/node_info'
+MQTT_FAN_NODE_SEND_NODE_INFO =  'gateway/fan/node_info'
+MQTT_AC_SEND_NODE_INFO =        'gateway/ac/node_info'
+
+MQTT_TOPIC_CONTROL_FAN =        'gateway/fan/control'
+MQTT_TOPIC_CONTROL_AC =         'gateway/ac/control'
 
 # Hàm lấy dữ liệu từ MySQL
 def fetch_data_from_mysql(query):
@@ -98,19 +130,19 @@ if __name__ == "__main__":
 
         # Gửi dữ liệu lên MQTT Broker với các topic tương ứng
         if pmv_data:
-            publish_to_mqtt(pmv_data, MQTT_TOPIC_GATEWAY_SENSORS)
+            publish_to_mqtt(pmv_data, MQTT_TOPIC_PMV_DATA)
 
         if sensor_data:
-            publish_to_mqtt(sensor_data, MQTT_TOPIC_GATEWAY_SENSORS)
+            publish_to_mqtt(sensor_data, MQTT_TOPIC_SENSOR_DATA)
 
         if fan_data:
-            publish_to_mqtt(fan_data, MQTT_TOPIC_GATEWAY_SENSORS)
+            publish_to_mqtt(fan_data, MQTT_TOPIC_FAN_DATA)
 
         if em_data:
-            publish_to_mqtt(em_data, MQTT_TOPIC_GATEWAY_SENSORS)
+            publish_to_mqtt(em_data, MQTT_TOPIC_EM_DATA)
 
         if ac_data:
-            publish_to_mqtt(ac_data, MQTT_TOPIC_GATEWAY_SENSORS)
+            publish_to_mqtt(ac_data, MQTT_TOPIC_AC_DATA)
 
         # Gửi keepalive mỗi 30 phút (1800 giây)
         send_keepalive()
