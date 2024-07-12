@@ -13,7 +13,7 @@
 
 //Private functions
 void databaseSetup();
-void databaseInsertSample();
+void databaseInsertSample(DatabaseAccess& db);
 void runControlProgramWithReset(DatabaseAccess& db);
 void control_program();
 // Signal handler to reset control program manually
@@ -25,7 +25,7 @@ void signalHandler(int signum);
 int main(int argc, char *argv[]) {
     std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
     DatabaseAccess db;
-    databaseInsertSample();
+    databaseInsertSample(db);
     while (true) {
         reset_requested.store(false);
         std::thread control_program_thread(runControlProgramWithReset, std::ref(db));
@@ -145,32 +145,53 @@ void runControlProgramWithReset(DatabaseAccess& db) {
     rt_thread.join();
 }
 
-void databaseInsertSample() {
-    // e.g. for inserting data 
-    double temp = 25.3;
-    double humid = 60.2;
-    double wind = 5.4;
-    int pm25 = 12;
-    int time = 1622559182;
-    int sensor_id = 1;
+void databaseInsertSample(DatabaseAccess& db) {
+    // Insert sample data into PMVtable
+    const char* pmv_query = "INSERT INTO PMVtable (met, clo, pmvref, outdoor_temp) VALUES "
+                            "(1.2, 0.5, 0.5, 25.0), "
+                            "(1.5, 0.7, 0.6, 30.0)";
+    mysql_execute_query(con, pmv_query);
 
-    // check if sensor_id exists
-    if (!check_sensor_id_exists(con, sensor_id)) {
-        std::cout << "Error: sensor_id " << sensor_id << " does not exist in RegistrationSensor table." << std::endl;
-        mysql_close(con);
-        // return 1;
-    }
+    // Insert sample data into RegistrationSensor
+    const char* reg_sensor_query = "INSERT INTO RegistrationSensor (id) VALUES (1), (2)";
+    mysql_execute_query(con, reg_sensor_query);
 
-    // Prepare the SQL query
-    char query[256];
-    snprintf(query, sizeof(query), "INSERT INTO SensorNode (temp, humid, wind, pm25, time, sensor_id) VALUES (%f, %f, %f, %d, %d, %d);",
-             temp, humid, wind, pm25, time, sensor_id);
+    // Insert sample data into SensorNode
+    const char* sensor_node_query = "INSERT INTO SensorNode (temp, humid, wind, pm25, time, sensor_id) VALUES "
+                                    "(24.5, 60.0, 1.5, 35, 1622559182, 1), "
+                                    "(25.5, 55.0, 1.0, 30, 1622559182, 2)";
+    mysql_execute_query(con, sensor_node_query);
 
-    // Execute the query
-    mysql_execute_query(con, query);
+    // Insert sample data into RegistrationEnergy
+    const char* reg_energy_query = "INSERT INTO RegistrationEnergy (id) VALUES (1)";
+    mysql_execute_query(con, reg_energy_query);
 
-    std::cout << "Data inserted successfully into SensorNode table." << std::endl;
+    // Insert sample data into EnergyMeasure
+    const char* energy_measure_query = "INSERT INTO EnergyMeasure (voltage, current, frequency, active_power, power_factor, time, em_id) VALUES "
+                                       "(230.0, 5.0, 50, 1150.0, 0.98, 1622559182, 1)";
+    mysql_execute_query(con, energy_measure_query);
 
+    // Insert sample data into RegistrationFan
+    const char* reg_fan_query = "INSERT INTO RegistrationFan (id, sensor_link, model) VALUES "
+                                "(1, 1, 'Model A'), "
+                                "(2, 2, 'Model B')";
+    mysql_execute_query(con, reg_fan_query);
+
+    // Insert sample data into Fan
+    const char* fan_query = "INSERT INTO Fan (set_speed, control_mode, set_time, time, fan_id) VALUES "
+                            "(2.5, 1, 3600, 1622559182, 1), "
+                            "(3.0, 0, 3600, 1622559182, 2)";
+    mysql_execute_query(con, fan_query);
+
+    // Insert sample data into RegistrationAC
+    const char* reg_ac_query = "INSERT INTO RegistrationAC (id, sensor_link, model) VALUES "
+                               "(1, 1, 'AC Model 1')";
+    mysql_execute_query(con, reg_ac_query);
+
+    // Insert sample data into AirConditioner
+    const char* ac_query = "INSERT INTO AirConditioner (set_temp, state, control_mode, time, ac_id) VALUES "
+                           "(22.0, true, false, 1622559182, 1)";
+    mysql_execute_query(con, ac_query);
 }
 
 // Signal handler to reset control program manually

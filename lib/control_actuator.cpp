@@ -168,6 +168,6 @@ void ACNode::set_time(int value) {
     period = value;
 }
 
-void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp) {
-    // instruction here
-}
+// void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp) {
+//     // instruction here
+// }

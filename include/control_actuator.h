@@ -78,6 +78,6 @@ class ACNode {
         void set_time(int value);
 };
 
-void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp);
+// void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp);
 
 #endif // CONTROL_ACTUATOR_H
