@@ -1,23 +1,44 @@
 #include <iostream>
 #include <chrono>
 #include <stdlib.h>
+#include <thread>
+#include <atomic>
+#include <csignal>
 #include <mariadb/mysql.h>
-#include "../lib/database_access.cpp"
-#include "../lib/control_actuator.cpp"
-#include "../lib/z3gateway_comm.cpp"
+#include "../include/database_access.h"
+#include "../include/control_actuator.h"
+// #include "../lib/z3gateway_comm.cpp"
 
 //Private variables
 
 //Private functions
 void databaseSetup();
 void databaseInsertSample();
-
+void runControlProgramWithReset(DatabaseAccess& db);
 void control_program();
+// Signal handler to reset control program manually
+std::atomic<bool> reset_requested(false);
+void signalHandler(int signum);
+
 
 // 
 int main(int argc, char *argv[]) {
+    std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
     DatabaseAccess db;
     databaseInsertSample();
+    while (true) {
+        reset_requested.store(false);
+        std::thread control_program_thread(runControlProgramWithReset, std::ref(db));
+
+        // Monitor for manual reset signal
+        while (!reset_requested.load()) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
+        // Signal to stop the control program thread
+        control_program_thread.detach();
+        std::cout << "Resetting control program..." << std::endl;
+    }
     return 0;
 }
 
@@ -101,6 +122,29 @@ void control_program(DatabaseAccess db) {
     }
 }
 
+// Function to run the control program and reset after 5 minutes
+void runControlProgramWithReset(DatabaseAccess& db) {
+    std::atomic<bool> running(true);
+
+    auto control_program_thread = [&]() {
+        while (running.load()) {
+            control_program(db);
+        }
+    };
+
+    auto reset_thread = [&]() {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(5min);
+        running.store(false);
+    };
+
+    std::thread cp_thread(control_program_thread);
+    std::thread rt_thread(reset_thread);
+
+    cp_thread.join();
+    rt_thread.join();
+}
+
 void databaseInsertSample() {
     // e.g. for inserting data 
     double temp = 25.3;
@@ -127,6 +171,11 @@ void databaseInsertSample() {
 
     std::cout << "Data inserted successfully into SensorNode table." << std::endl;
 
+}
+
+// Signal handler to reset control program manually
+void signalHandler(int signum) {
+    reset_requested.store(true);
 }
 
 void databaseSetup() {

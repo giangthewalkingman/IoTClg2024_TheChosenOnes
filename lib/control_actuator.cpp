@@ -1,14 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <thread>
-#include <cmath>
-#include <limits>
-#include <algorithm>
-#define DELTA_TEMP 3
-#define AC_TURN_ON_TIME_REF 900
-#define MAXIMUM_TEMP_FOR_INFINITE_PERIOD 29
-#define SPEED_STEP 2
-#define PMV_DIFF_THRESHOLD 0.02
+#include "control_actuator.h"
 
 void pmv_ppd(
     const double& ta,
@@ -62,191 +52,122 @@ void pmv_ppd(
     ppd = round(10 * (100.0 - 95.0 * std::exp(-0.03353 * std::pow(pmv, 4.0) - 0.2179 * std::pow(pmv, 2.0)))) / 10;
 }
 
-
-class PMV_Data {
-    public:
-        PMV_Data(int sensor_id_, double temp_, double humid_, double wind_);
-        int sensor_id;
-        double temp;
-        double humid;
-        double wind;
-        double pmv;
-        double wind_max;
-        // function to get data from database 
-        void get_data(int id) {
-            // instuction here
-
-        };
-        // function to send data after execute algorithm
-        void send_data(double met, double clo, double pmv_ref) {
-            // instruction here
-        };
-        void get_max_air_speed (int id) {
-            if (temp >= 25.5)
-                wind_max = 1.2;
-            else if (temp <= 22.5)
-                wind_max = 0.15;
-            else {
-                wind_max = 50.49 - 4.4047*temp + 0.096425*temp*temp;
-            }
-        }
-        void cal_pmv (int id) {
-            // pmv calculation instruction here
-        }
-};
-
 PMV_Data::PMV_Data(int sensor_id_, double temp_, double humid_, double wind_) {
-        sensor_id = sensor_id_;
-        temp = temp_;
-        humid = humid_;
-        wind = wind_;
+    sensor_id = sensor_id_;
+    temp = temp_;
+    humid = humid_;
+    wind = wind_;
 }
 
-class FanNode {
-    private:
-        int *sensor_link;
-        int control_mode;
-        int period;
-    public:
-        int fan_id;
-        int speed;
-        double pmv_avg;
-        double max_speed;
-        void cal_pmv_avg (std::vector<PMV_Data>& sensor_env_list) {
-            double pmv_sum = 0;
-            for (int i = 0; i < sizeof(sensor_link); i++) {
-                for (auto& item : sensor_env_list) {
-                    if (item.sensor_id == sensor_link[i]) {
-                        item.get_data(i);
-                        item.cal_pmv(i);
-                        pmv_sum += item.pmv;
-                        max_speed = item.wind_max;
-                    }
-                }
-            }
-            pmv_avg = pmv_sum / sizeof(sensor_link);
-        };            
-        void get_sensor_link () {};
-        void set_speed(double s) {
-            speed = s;
-            // more instruction here
-        }
-        void set_control_mode(int i) {
-            control_mode = i;
-            // more instruction here
-        }
-        void set_time(int second) {
-            period = second;
-            // more instruction here
-        }
-        void control_fan_pmv_model (std::vector<PMV_Data>& sensor_env_list, double& pmv_ref) {
-            if (pmv_avg <= 0.5 && pmv_avg >= -0.5) {
-                if (speed == 0)
-                    set_speed(0);
-                double pmv_diff;
-                // fan will reduce speed as pmv is convergent to pmv_ref
-                do {
-                    set_speed(speed - SPEED_STEP);
-                    cal_pmv_avg(sensor_env_list);
-                    pmv_diff = pmv_avg - pmv_ref;
-                }
-                while (pmv_diff < PMV_DIFF_THRESHOLD && pmv_diff > (-1 * PMV_DIFF_THRESHOLD));
-                if (speed > max_speed) {
-                    if (pmv_avg > -0.5)
-                        set_speed(max_speed);
-                    else
-                        set_speed(0);
-                }
-            }
-        }
-};
+void PMV_Data::get_data(int id) {
+    // instuction here
+}
 
-class ACNode {
-    private:
-        int* sensor_link;
-        int control_mode;
-        int period;
-    public:
-        int ac_temp;
-        int ac_id;
-        bool state;
-        double pmv_avg;
-        void cal_pmv_avg (std::vector<PMV_Data>& sensor_env_list) {
-            double pmv_sum = 0;
-            for (int i = 0; i < sizeof(sensor_link); i++) {
-                for (auto& item : sensor_env_list) {
-                    if (item.sensor_id == sensor_link[i]) {
-                        item.get_data(i); // truy van
-                        item.cal_pmv(i);
-                        pmv_sum += item.pmv;
-                    }
-                }
+void PMV_Data::send_data(double met, double clo, double pmv_ref) {
+    // instruction here
+}
+
+void PMV_Data::get_max_air_speed(int id) {
+    if (temp >= 25.5)
+        wind_max = 1.2;
+    else if (temp <= 22.5)
+        wind_max = 0.15;
+    else {
+        wind_max = 50.49 - 4.4047 * temp + 0.096425 * temp * temp;
+    }
+}
+
+void PMV_Data::cal_pmv(int id) {
+    // pmv calculation instruction here
+}
+
+void FanNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
+    double pmv_sum = 0;
+    for (int i = 0; i < sizeof(sensor_link); i++) {
+        for (auto& item : sensor_env_list) {
+            if (item.sensor_id == sensor_link[i]) {
+                item.get_data(i);
+                item.cal_pmv(i);
+                pmv_sum += item.pmv;
+                max_speed = item.wind_max;
             }
-            pmv_avg = pmv_sum / sizeof(sensor_link);
-        };
-        void get_sensor_link () {};
-        void set_temp(int t) {
-            ac_temp = t;
-            // more instruction here
         }
-        void set_control_mode(int value) {
-            control_mode = value;
-            // more instruction here
+    }
+    pmv_avg = pmv_sum / sizeof(sensor_link);
+}
+
+void FanNode::get_sensor_link() {}
+
+void FanNode::set_speed(double s) {
+    speed = s;
+    // more instruction here
+}
+
+void FanNode::set_control_mode(int i) {
+    control_mode = i;
+    // more instruction here
+}
+
+void FanNode::set_time(int second) {
+    period = second;
+    // more instruction here
+}
+
+void FanNode::control_fan_pmv_model(std::vector<PMV_Data>& sensor_env_list, double& pmv_ref) {
+    if (pmv_avg <= 0.5 && pmv_avg >= -0.5) {
+        if (speed == 0)
+            set_speed(0);
+        double pmv_diff;
+        // fan will reduce speed as pmv is convergent to pmv_ref
+        do {
+            set_speed(speed - SPEED_STEP);
+            cal_pmv_avg(sensor_env_list);
+            pmv_diff = pmv_avg - pmv_ref;
+        } while (pmv_diff < PMV_DIFF_THRESHOLD && pmv_diff > (-1 * PMV_DIFF_THRESHOLD));
+        if (speed > max_speed) {
+            if (pmv_avg > -0.5)
+                set_speed(max_speed);
+            else
+                set_speed(0);
         }
-        void set_state(bool s) {
-            state = s;
-            // more instruction here
+    }
+}
+
+void ACNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
+    double pmv_sum = 0;
+    for (int i = 0; i < sizeof(sensor_link); i++) {
+        for (auto& item : sensor_env_list) {
+            if (item.sensor_id == sensor_link[i]) {
+                item.get_data(i); // query
+                item.cal_pmv(i);
+                pmv_sum += item.pmv;
+            }
         }
-        void set_time(int value) {
-            period = value;
-        }
-};
+    }
+    pmv_avg = pmv_sum / sizeof(sensor_link);
+}
+
+void ACNode::get_sensor_link() {}
+
+void ACNode::set_temp(int t) {
+    ac_temp = t;
+    // more instruction here
+}
+
+void ACNode::set_control_mode(int value) {
+    control_mode = value;
+    // more instruction here
+}
+
+void ACNode::set_state(bool s) {
+    state = s;
+    // more instruction here
+}
+
+void ACNode::set_time(int value) {
+    period = value;
+}
 
 void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp) {
     // instruction here
 }
-
-// int main() {
-//     std::vector<int> sensor_id = {1,2,3,4}; // get list sensor_id
-//     std::vector<int> fan_id = {1,2};
-//     std::vector<int> ac_id = {1};
-//     std::vector<PMV_Data> sensor_env_list;
-//     std::vector<FanNode> fan_node_list;
-//     std::vector<ACNode> ac_node_list;
-
-//     PMV_Data pmv_data;
-//     FanNode fan_node;
-//     ACNode ac_node;
-
-//     // control ACs
-//     for (auto & item : ac_node_list) {
-//         if (outdoor_temp - item.ac_temp > DELTA_TEMP) {
-//             item.set_temp(MAXIMUM_TEMP_FOR_INFINITE_PERIOD);
-//             item.set_time(-1);
-//             if (item.state == false)
-//                 item.set_state(true);
-//             continue;
-//         }
-//         if (item.pmv_avg > 0.5) {
-//             if (item.state == false) {
-//                 item.set_time(AC_TURN_ON_TIME_REF);
-//                 item.set_state(true);
-//             }
-//         }
-//         else {
-//             item.set_state(false);
-//         }
-//     }
-
-//     // control fans in multithreads
-//     std::vector<std::thread> control_fan_thread;
-//     for (auto& item : fan_node_list) {
-//         control_fan_thread.emplace_back([&item, &pmv_ref, &sensor_env_list]() {
-//             item.control_fan_pmv_model(sensor_env_list, pmv_ref);
-//         });
-//     }
-//     // wait for all threads complete
-//     for (auto& thread : control_fan_thread) {
-//         thread.join();
-//     }
-// }

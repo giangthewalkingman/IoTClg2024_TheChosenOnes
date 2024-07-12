@@ -1,15 +1,13 @@
-#include <iostream>
-#include <stdlib.h>
-#include <mariadb/mysql.h>
-#include <sstream>
-#include <vector>
-
-struct connection_details {
-    const char *server, *user, *password, *database;
-};
+#include "database_access.h"
 
 MYSQL *con;
-void finish_with_error(MYSQL *con);
+
+void finish_with_error(MYSQL *con) {
+    fprintf(stderr, "%s\n", mysql_error(con));
+    mysql_close(con); 
+    exit(1);     
+}
+
 MYSQL* mysql_connection_setup(struct connection_details mysql_details) {
     MYSQL *connection = mysql_init(NULL);
 
@@ -45,25 +43,6 @@ bool check_sensor_id_exists(MYSQL *connection, int sensor_id) {
 
     return exists;
 }
-
-struct ThingsIds {
-    std::vector<int> sensor_ids;
-    std::vector<int> fan_ids;
-    std::vector<int> ac_ids;
-};
-
-class DatabaseAccess {
-    public: 
-    DatabaseAccess();
-    ~DatabaseAccess();
-    ThingsIds getThingsIds(MYSQL *conn); // funcs to get total id (or number) of sensors, fans, ac
-    void getSensorNodeData(double &temp, double &humid, double &wind, int &pm25, int &time, int sensor_id);
-    void getEnergyMeasureData(double &voltage, double &current, int &frequency, double &active_power, double &power_factor, int &time, int em_id);
-    void getFanData(double &set_speed, int &control_mode, int &set_time, int &time, int fan_id);
-    void getPMVData(double &met, double &clo, double &pmvref, double &outdoor_temp);
-    void getAirConditionerData(double &set_temp, bool &state, bool &control_mode, int &time, int ac_id);
-    void finishWithError(MYSQL* con);
-};
 
 DatabaseAccess::DatabaseAccess() {
     struct connection_details mysqlD;
@@ -107,7 +86,6 @@ void DatabaseAccess::getSensorNodeData(double &temp, double &humid, double &wind
     mysql_free_result(result);
 }
 
-
 void DatabaseAccess::getEnergyMeasureData(double &voltage, double &current, int &frequency, double &active_power, double &power_factor, int &time, int em_id) {
     std::ostringstream query;
     query << "SELECT voltage, current, frequency, active_power, power_factor, time FROM EnergyMeasure WHERE em_id = " << em_id;
@@ -137,7 +115,6 @@ void DatabaseAccess::getEnergyMeasureData(double &voltage, double &current, int 
     mysql_free_result(result);
 }
 
-
 void DatabaseAccess::getFanData(double &set_speed, int &control_mode, int &set_time, int &time, int fan_id) {
     std::ostringstream query;
     query << "SELECT set_speed, control_mode, set_time, time FROM Fan WHERE fan_id = " << fan_id;
@@ -164,7 +141,6 @@ void DatabaseAccess::getFanData(double &set_speed, int &control_mode, int &set_t
 
     mysql_free_result(result);
 }
-
 
 void DatabaseAccess::getAirConditionerData(double &set_temp, bool &state, bool &control_mode, int &time, int ac_id) {
     std::ostringstream query;
@@ -281,11 +257,4 @@ ThingsIds DatabaseAccess::getThingsIds(MYSQL *conn) {
     mysql_close(conn);
 
     return thingsIds;
-}
-
-
-
-void finish_with_error(MYSQL *con) {
-    fprintf(stderr, "%s\n", mysql_error(con));
-    mysql_close(con);      
 }
