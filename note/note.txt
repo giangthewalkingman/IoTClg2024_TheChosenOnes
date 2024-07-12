@@ -13,8 +13,9 @@ CREATE DATABASE iot_clg_db;
 CREATE TABLE PMVtable (
     id INT PRIMARY KEY AUTO_INCREMENT,
     met DOUBLE NOT NULL,
-    clo INT NOT NULL,
-    pmvref INT NOT NULL
+    clo DOUBLE NOT NULL,
+    pmvref DOUBLE NOT NULL,
+    outdoor_temp DOUBLE NOT NULL
 );
 CREATE TABLE RegistrationSensor (
     id INT PRIMARY KEY AUTO_INCREMENT

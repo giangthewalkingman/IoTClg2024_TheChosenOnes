@@ -2,6 +2,7 @@
 #include <vector>
 #include <thread>
 #include <cmath>
+#include <limits>
 #include <algorithm>
 #define DELTA_TEMP 3
 #define AC_TURN_ON_TIME_REF 900
@@ -9,61 +10,75 @@
 #define SPEED_STEP 2
 #define PMV_DIFF_THRESHOLD 0.02
 
-// function to calculate the Standard Effective Temperature (SET)
-double SET(double ta, double rh, double tr, double va, double clo, double met) {
-    // for the actual SET calculation
-    return ta + rh + tr + va + clo + met;
-}
+void pmv_ppd(
+    const double& ta,
+    const double& v,
+    const double& rh,
+    const double& met,
+    const double& clo,
+    double& pmv,
+    double& ppd
+) {
+    double vr = (met > 1) ? std::round((v + 0.3 * (met - 1)) * 1000) / 1000.0 : v;
+    double clo_d = (met > 1.2) ? std::round(clo * (0.6 + 0.4 / met) * 1000) / 1000.0 : clo;
+    double pa = rh * 10 * std::exp(16.6536 - 4030.183 / (ta + 235));
+    double icl = 0.155 * clo_d;
+    double m = met * 58.15;
+    double f_cl = (icl <= 0.078) ? (1 + 1.29 * icl) : (1.05 + 0.645 * icl);
+    double hcf = 12.1 * std::sqrt(vr);
+    double hc = hcf;
+    double taa = ta + 273;
+    double t_cla = taa + (35.5 - ta) / (3.5 * icl + 0.1);
 
-// function to calculate the Predicted Mean Vote (PMV)
-double PMV(double ta, double tr, double va, double clo, double met) {
-    // for the actual PMV calculation
-    return ta + tr + va + clo + met;
-}
+    double p1 = icl * f_cl;
+    double p2 = p1 * 3.96;
+    double p3 = p1 * 100;
+    double p4 = p1 * taa;
+    double p5 = (308.7 - 0.028 * m) + (p2 * std::pow((taa / 100.0), 4));
+    double xn = t_cla / 100;
+    double xf = t_cla / 50;
+    double eps = 0.00015;
 
-// function to estimate the adjusted PMV value
-double AdjustedPMV(double ta, double rh, double tr, double velev, double clo, double met) {
-    const double vstill = 0.15;
-    const double tstep = 0.1;
-    const double epsilon = 0.001;
-    const int kmax = 100;
+    int n = 0;
+    while (std::abs(xn - xf) > eps) {
+        xf = (xf + xn) / 2;
+        double hcn = 2.38 * std::pow(std::abs(100.0 * xf - taa), 0.25);
+        hc = (hcf > hcn) ? hcf : hcn;
+        xn = (p5 + p4 * hc - p2 * std::pow(xf, 4)) / (100 + p3 * hc);
+        n += 1;
+        if (n > 300) throw std::runtime_error("Max iterations exceeded");
+    }
 
-    double SETref = SET(ta, rh, tr, velev, clo, met);
-    double SETdiff;
-    int k = 0;
+    double tcl = 100 * xn - 273;
+    double hl1 = 3.05 * 0.001 * (5733 - (6.99 * m) - pa);
+    double hl2 = (m > 58.15) ? (0.42 * (m - 58.15)) : 0;
+    double hl3 = 1.7 * 0.00001 * m * (5867 - pa);
+    double hl4 = 0.0014 * m * (34 - ta);
+    double hl5 = 3.96 * f_cl * (std::pow(xn, 4) - std::pow((taa / 100.0), 4));
+    double hl6 = f_cl * hc * (tcl - ta);
 
-    do {
-        ta -= tstep;
-        tr -= tstep;
-        double SETcurrent = SET(ta, rh, tr, vstill, clo, met);
-        SETdiff = SETcurrent - SETref;
-        k++;
-    } while (k < kmax && SETdiff > epsilon);
-
-    double taadj = ta;
-    double tradj = tr;
-    double PMVadj = PMV(taadj, tradj, vstill, clo, met);
-
-    return PMVadj;
+    double ts = 0.303 * std::exp(-0.036 * m) + 0.028;
+    pmv = round(100 * ts * (m - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)) / 100.0;
+    ppd = round(10 * (100.0 - 95.0 * std::exp(-0.03353 * std::pow(pmv, 4.0) - 0.2179 * std::pow(pmv, 2.0)))) / 10;
 }
 
 
 class PMV_Data {
     public:
-        PMV_Data(int sensor_id_, float temp_, float humid_, float wind_);
+        PMV_Data(int sensor_id_, double temp_, double humid_, double wind_);
         int sensor_id;
-        float temp;
-        float humid;
-        float wind;
-        float pmv;
-        float wind_max;
+        double temp;
+        double humid;
+        double wind;
+        double pmv;
+        double wind_max;
         // function to get data from database 
         void get_data(int id) {
             // instuction here
 
         };
         // function to send data after execute algorithm
-        void send_data(float met, float clo, float pmv_ref) {
+        void send_data(double met, double clo, double pmv_ref) {
             // instruction here
         };
         void get_max_air_speed (int id) {
@@ -80,7 +95,7 @@ class PMV_Data {
         }
 };
 
-PMV_Data::PMV_Data(int sensor_id_, float temp_, float humid_, float wind_) {
+PMV_Data::PMV_Data(int sensor_id_, double temp_, double humid_, double wind_) {
         sensor_id = sensor_id_;
         temp = temp_;
         humid = humid_;
@@ -95,10 +110,10 @@ class FanNode {
     public:
         int fan_id;
         int speed;
-        float pmv_avg;
-        float max_speed;
+        double pmv_avg;
+        double max_speed;
         void cal_pmv_avg (std::vector<PMV_Data>& sensor_env_list) {
-            float pmv_sum = 0;
+            double pmv_sum = 0;
             for (int i = 0; i < sizeof(sensor_link); i++) {
                 for (auto& item : sensor_env_list) {
                     if (item.sensor_id == sensor_link[i]) {
@@ -112,7 +127,7 @@ class FanNode {
             pmv_avg = pmv_sum / sizeof(sensor_link);
         };            
         void get_sensor_link () {};
-        void set_speed(float s) {
+        void set_speed(double s) {
             speed = s;
             // more instruction here
         }
@@ -124,11 +139,11 @@ class FanNode {
             period = second;
             // more instruction here
         }
-        void control_fan_pmv_model (std::vector<PMV_Data>& sensor_env_list, float& pmv_ref) {
+        void control_fan_pmv_model (std::vector<PMV_Data>& sensor_env_list, double& pmv_ref) {
             if (pmv_avg <= 0.5 && pmv_avg >= -0.5) {
                 if (speed == 0)
                     set_speed(0);
-                float pmv_diff;
+                double pmv_diff;
                 // fan will reduce speed as pmv is convergent to pmv_ref
                 do {
                     set_speed(speed - SPEED_STEP);
@@ -155,13 +170,13 @@ class ACNode {
         int ac_temp;
         int ac_id;
         bool state;
-        float pmv_avg;
+        double pmv_avg;
         void cal_pmv_avg (std::vector<PMV_Data>& sensor_env_list) {
-            float pmv_sum = 0;
+            double pmv_sum = 0;
             for (int i = 0; i < sizeof(sensor_link); i++) {
                 for (auto& item : sensor_env_list) {
                     if (item.sensor_id == sensor_link[i]) {
-                        item.get_data(i);
+                        item.get_data(i); // truy van
                         item.cal_pmv(i);
                         pmv_sum += item.pmv;
                     }
@@ -187,7 +202,7 @@ class ACNode {
         }
 };
 
-void get_room_infomation(float& met, float& clo, float& pmv_ref, float& outdoor_temp) {
+void get_room_infomation(double& met, double& clo, double& pmv_ref, double& outdoor_temp) {
     // instruction here
 }
 
