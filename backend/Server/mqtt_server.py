@@ -29,10 +29,10 @@ MQTT_SENSOR_NODE_CONNECT =      'server/sensor/connect'
 MQTT_ENERGY_NODE_CONNECT =      'server/energy/connect'
 MQTT_FAN_NODE_CONNECT =         'server/fan/connect'
 MQTT_AC_NODE_CONNECT =          'server/ac/connect'
-MQTT_SENSOR_SEND_NODE_INFO_ACK =    'gateway/sensor/node_info'
-MQTT_ENERGY_SEND_NODE_INFO_ACK =    'gateway/energy/node_info'
-MQTT_FAN_SEND_NODE_INFO_ACK =  'gateway/energy/node_info'
-MQTT_AC_SEND_NODE_INFO_ACK =        'gateway/energy/node_info'
+MQTT_SENSOR_SEND_NODE_INFO_ACK =    'server/sensor/node_info_ack'
+MQTT_ENERGY_SEND_NODE_INFO_ACK =    'server/energy/node_info_ack'
+MQTT_FAN_SEND_NODE_INFO_ACK =       'server/fan/node_info_ack'
+MQTT_AC_SEND_NODE_INFO_ACK =        'server/ac/node_info_ack'
 MQTT_TOPIC_KEEPALIVE_ACK =          'server/keepalive_ack'
 
 MQTT_TOPIC_PMV_DATA =           'server/pmv_data'
@@ -282,14 +282,14 @@ def sendNodeInfo(type_node, node_id, mac, mqtt_topic):
     message = None
     if type_node == "sensor":
         message = {
-            "operator": "sensor_join",
+            "operator": "add_sensor_node",
             "status": 1,
             "info": {
                 "mac": mac,
                 "sensor_id": node_id,
             }
         }
-    elif type_node == "energy":
+    elif type_node == "add_em_node":
         message = {
             "operator": "em_join",
             "status": 1,
@@ -298,7 +298,7 @@ def sendNodeInfo(type_node, node_id, mac, mqtt_topic):
                 "em_id": node_id,
             }
         }
-    elif type_node == "fan":
+    elif type_node == "add_fan_node":
         message = {
             "operator": "fan_join",
             "status": 1,
@@ -309,7 +309,7 @@ def sendNodeInfo(type_node, node_id, mac, mqtt_topic):
         }
     elif type_node == "ac":
         message = {
-            "operator": "ac_join",
+            "operator": "add_ac_node",
             "status": 1,
             "info": {
                 "mac": mac,
@@ -326,7 +326,7 @@ def sendNodeInfoAck(message):
     operator = message["operator"]
     status = message["status"]
     if status == 1:
-        if operator == "sensor_join_ack" or operator == "em_join_ack" or operator == "fan_join_ack" or operator == "ac_join_ack":
+        if operator == "add_sensor_node_ack" or operator == "add_em_node_ack" or operator == "add_fan_node_ack" or operator == "add_ac_node_ack":
             node_info_ack_received.set()
 
 def save_pmv_data(data):

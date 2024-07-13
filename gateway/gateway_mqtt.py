@@ -1,12 +1,15 @@
 import time
 import mysql.connector
 import paho.mqtt.client as mqtt
+import mysql.connector
+import json
+from mysql.connector import Error
 from getmac import get_mac_address
 
 MAC = get_mac_address()     # MAC address here
 
 # Cấu hình MySQL
-MYSQL_HOST = 'localhost'
+MYSQL_HOST = 'localhost' # change w.r.t. gateway
 MYSQL_USER = 'root'
 MYSQL_PASSWORD = ''
 MYSQL_DATABASE = 'schema_gateway'
@@ -22,10 +25,10 @@ MQTT_SENSOR_NODE_CONNECT =      'server/sensor/connect'
 MQTT_ENERGY_NODE_CONNECT =      'server/energy/connect'
 MQTT_FAN_NODE_CONNECT =         'server/fan/connect'
 MQTT_AC_NODE_CONNECT =          'server/ac/connect'
-MQTT_SENSOR_SEND_NODE_INFO_ACK =    'gateway/sensor/node_info'
-MQTT_ENERGY_SEND_NODE_INFO_ACK =    'gateway/energy/node_info'
-MQTT_FAN_SEND_NODE_INFO_ACK =  'gateway/energy/node_info'
-MQTT_AC_SEND_NODE_INFO_ACK =        'gateway/energy/node_info'
+MQTT_SENSOR_SEND_NODE_INFO_ACK =    'server/sensor/node_info_ack'
+MQTT_ENERGY_SEND_NODE_INFO_ACK =    'server/energy/node_info_ack'
+MQTT_FAN_SEND_NODE_INFO_ACK =       'server/fan/node_info_ack'
+MQTT_AC_SEND_NODE_INFO_ACK =        'server/ac/node_info_ack'
 MQTT_TOPIC_KEEPALIVE_ACK =          'server/keepalive_ack'
 
 MQTT_TOPIC_PMV_DATA =           'server/pmv_data'
@@ -46,6 +49,7 @@ MQTT_ENERGY_SEND_NODE_INFO =    'gateway/energy/node_info'
 MQTT_FAN_NODE_SEND_NODE_INFO =  'gateway/fan/node_info'
 MQTT_AC_SEND_NODE_INFO =        'gateway/ac/node_info'
 
+MQTT_SEND_ENV_PARAMS =          'gateway/env_params'
 MQTT_TOPIC_CONTROL_FAN =        'gateway/fan/control'
 MQTT_TOPIC_CONTROL_AC =         'gateway/ac/control'
 
@@ -67,6 +71,29 @@ def fetch_data_from_mysql(query):
     except mysql.connector.Error as err:
         print(f"Error: {err}")
         return None
+    
+def create_connection():
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="schema_server"
+        )
+        if connection.is_connected():
+            return connection
+    except Error as e:
+        print("Error while connecting to MySQL:", e)
+        return None
+    
+# Connect to MQTT broker
+def connect_mqtt():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    print("Connected to MQTT")
+    return client
 
 # Callback khi kết nối thành công tới MQTT Broker
 def on_connect(client, userdata, flags, rc):
@@ -86,6 +113,40 @@ def on_disconnect(client, userdata, rc):
 def on_publish(client, userdata, mid):
     print("Message published.")
 
+def on_message(client, userdata, msg):
+    print(msg.topic + " " + str(msg.payload))
+    message = json.loads(msg.payload.decode())
+    if msg.topic == MQTT_GATEWAY_LINKING:
+        print("From topic " + MQTT_GATEWAY_LINKING)
+        gatewayLinking(message)
+    elif msg.topic == MQTT_TOPIC_CONNECT_KEY:
+        print("From topic " + MQTT_TOPIC_CONNECT_KEY)
+        connectKey(message)
+    elif msg.topic == MQTT_TOPIC_KEEPALIVE:
+        print("From topic " + MQTT_TOPIC_KEEPALIVE)
+        send_keepalive(message)
+    elif msg.topic == MQTT_SENSOR_SEND_NODE_INFO:
+        print("From topic " + MQTT_SENSOR_SEND_NODE_INFO)
+        addSensorNode(message)
+    elif msg.topic == MQTT_ENERGY_SEND_NODE_INFO:
+        print("From topic " + MQTT_ENERGY_SEND_NODE_INFO)
+        addEnergyNode(message)
+    elif msg.topic == MQTT_FAN_NODE_SEND_NODE_INFO:
+        print("From topic " + MQTT_FAN_NODE_SEND_NODE_INFO)
+        addFanNode(message)
+    elif msg.topic == MQTT_AC_SEND_NODE_INFO:
+        print("From topic " + MQTT_AC_SEND_NODE_INFO)
+        addACNode(message)
+    elif msg.topic == MQTT_SEND_ENV_PARAMS:
+        print("From topic " + MQTT_SEND_ENV_PARAMS)
+        setEnvPmv(message)
+    elif msg.topic == MQTT_TOPIC_CONTROL_FAN:
+        print("From topic " + MQTT_TOPIC_CONTROL_FAN)
+        controlFan(message)
+    elif msg.topic == MQTT_TOPIC_CONTROL_AC:
+        print("From topic " + MQTT_TOPIC_CONTROL_AC)
+        controlAC(message)
+
 # Hàm kết nối tới MQTT Broker và gửi dữ liệu
 def publish_to_mqtt(data, topic):
     message = ', '.join(map(str, data))
@@ -96,15 +157,166 @@ def publish_to_mqtt(data, topic):
         print(f"Failed to publish to {topic}")
 
 # Hàm gửi keepalive
-def send_keepalive():
-    keepalive_message = {
-        "operator": "keepalive",
-        "status": 1,
-        "info": {
-            "mac": MAC
+def send_keepalive(message):
+    status = message["status"]
+    if status == 1:
+        keepalive_message = {
+            "operator": "keepalive_ack",
+            "status": 1,
+            "info": {
+                "mac": MAC
+            }
         }
-    }
-    publish_to_mqtt(keepalive_message, MQTT_TOPIC_GATEWAY_KEEPALIVE)
+        publish_to_mqtt(MQTT_TOPIC_KEEPALIVE_ACK, keepalive_message)
+
+def gatewayLinking(client, message):
+    mac = message["info"]["mac"]
+    allowed = message["info"]["allowed"]
+    if mac == MAC and allowed == 1:
+        # client subscribe all
+        client.subscribe(MQTT_TOPIC_CONNECT_KEY)
+        client.subscribe(MQTT_TOPIC_KEEPALIVE)
+        client.subscribe(MQTT_SENSOR_SEND_NODE_INFO)
+        client.subscribe(MQTT_ENERGY_SEND_NODE_INFO)
+        client.subscribe(MQTT_FAN_NODE_SEND_NODE_INFO)
+        client.subscribe(MQTT_AC_SEND_NODE_INFO)
+        client.subscribe(MQTT_SEND_ENV_PARAMS)
+        client.subscribe(MQTT_TOPIC_CONTROL_FAN)
+        client.subscribe(MQTT_TOPIC_CONTROL_AC)
+    elif allowed == 0:
+        print("Access to database failed")
+
+def connectKey(message):
+    # mac = message["info"]["mac"]
+    # type_node = message["info"]["type_node"]
+    # connect_key = message["info"]["connect_key"]
+    
+    # if mac == MAC:
+    #     # open BLE network for node
+    pass
+
+def addSensorNode(client, message):
+    status = message["status"]
+    mac = message["info"]["mac"]
+    if status == 1 and mac == MAC:
+        sensor_id = message["info"]["sensor_id"]
+
+        db = create_connection()
+        if db is None:
+            print("Unable to connect to database")
+            return
+
+        cursor = db.cursor()
+        query = "INSERT INTO RegistrationSensor (id) VALUES ('%s')"
+        cursor.execute(query, (sensor_id,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+        mqtt_pub_message = {
+            'operator': 'add_sensor_node_ack',
+            'status': 1
+        }
+        client.publish(MQTT_SENSOR_SEND_NODE_INFO_ACK, json.dumps(mqtt_pub_message))
+
+def addEnergyNode(message):
+    status = message["status"]
+    mac = message["info"]["mac"]
+    if status == 1 and mac == MAC:
+        id = message["info"]["id"]
+
+        db = create_connection()
+        if db is None:
+            print("Unable to connect to database")
+            return
+
+        cursor = db.cursor()
+        query = "INSERT INTO RegistrationEnergy (id) VALUES ('%s')"
+        cursor.execute(query, (id,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+        mqtt_pub_message = {
+            'operator': 'add_em_node_ack',
+            'status': 1
+        }
+        client.publish(MQTT_ENERGY_SEND_NODE_INFO_ACK, json.dumps(mqtt_pub_message))
+
+def addFanNode(message):
+    status = message["status"]
+    mac = message["info"]["mac"]
+    if status == 1 and mac == MAC:
+        id = message["info"]["id"]
+
+        db = create_connection()
+        if db is None:
+            print("Unable to connect to database")
+            return
+
+        cursor = db.cursor()
+        query = "INSERT INTO RegistrationFan (id, model, sensor_link) VALUES ('%s', 'pmv_model', 'None')"
+        cursor.execute(query, (id,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+        mqtt_pub_message = {
+            'operator': 'add_fan_node_ack',
+            'status': 1
+        }
+        client.publish(MQTT_FAN_SEND_NODE_INFO_ACK, json.dumps(mqtt_pub_message))
+
+def addACNode(message):
+    status = message["status"]
+    mac = message["info"]["mac"]
+    if status == 1 and mac == MAC:
+        id = message["info"]["id"]
+
+        db = create_connection()
+        if db is None:
+            print("Unable to connect to database")
+            return
+
+        cursor = db.cursor()
+        query = "INSERT INTO RegistrationAC (id, model, sensor_link) VALUES ('%s', 'pmv_model', 'None')"
+        cursor.execute(query, (id,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+        mqtt_pub_message = {
+            'operator': 'add_ac_node_ack',
+            'status': 1
+        }
+        client.publish(MQTT_AC_SEND_NODE_INFO_ACK, json.dumps(mqtt_pub_message))
+
+
+def setEnvPmv(message):
+    status = message["status"]
+    mac = message["info"]["mac"]
+    if status == 1 and mac == MAC:
+        met = message["info"]["met"]
+        clo = message["info"]["clo"]
+        pmv_ref = message["info"]["pmv_ref"]
+
+        db = create_connection()
+        if db is None:
+            print("Unable to connect to database")
+            return
+
+        cursor = db.cursor()
+        query = "INSERT INTO PMVtable (met, clo, pmv_ref) VALUES ('%s', '%s', '%s')"
+        cursor.execute(query, (met, clo, pmv_ref,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+def controlFan(message):
+    pass
+def controlAC(message):
+    pass
+
 
 if __name__ == "__main__":
     client = mqtt.Client()
