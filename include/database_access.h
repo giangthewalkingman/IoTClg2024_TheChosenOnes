@@ -21,6 +21,10 @@ struct ThingsIds {
     std::vector<int> sensor_ids;
     std::vector<int> fan_ids;
     std::vector<int> ac_ids;
+
+    bool operator!=(const ThingsIds& other) const {
+        return sensor_ids != other.sensor_ids || fan_ids != other.fan_ids || ac_ids != other.ac_ids;
+    }
 };
 
 class DatabaseAccess {

@@ -19,11 +19,12 @@ void control_program();
 // Signal handler to reset control program manually
 std::atomic<bool> reset_requested(false);
 void signalHandler(int signum);
+bool checkForNodeChanges(DatabaseAccess& db);
 
 
 // 
 int main(int argc, char *argv[]) {
-    std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
+    // std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
     DatabaseAccess db;
     databaseInsertSample(db);
     while (true) {
@@ -32,7 +33,10 @@ int main(int argc, char *argv[]) {
 
         // Monitor for manual reset signal
         while (!reset_requested.load()) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            if (checkForNodeChanges(db)) {
+                reset_requested.store(true);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
         // Signal to stop the control program thread
@@ -201,4 +205,17 @@ void signalHandler(int signum) {
 
 void databaseSetup() {
     //
+}
+
+bool checkForNodeChanges(DatabaseAccess& db) {
+    static ThingsIds previous_things_ids;
+
+    ThingsIds current_things_ids = db.getThingsIds(con); // Fetch the current state of nodes
+
+    if (current_things_ids != previous_things_ids) {
+        previous_things_ids = current_things_ids; // Update the previous state
+        return true;
+    }
+
+    return false;
 }
