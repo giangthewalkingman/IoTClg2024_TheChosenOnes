@@ -33,7 +33,7 @@ CREATE TABLE EnergyMeasure (
 );
 CREATE TABLE RegistrationFan (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    sensor_link INT NOT NULL,
+    sensor_links JSON NOT NULL,
     model VARCHAR(50) NOT NULL
 );
 CREATE TABLE Fan (
@@ -46,7 +46,7 @@ CREATE TABLE Fan (
 );
 CREATE TABLE RegistrationAC (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    sensor_link INT NOT NULL,
+    sensor_links JSON NOT NULL,
     model VARCHAR(50) NOT NULL
 );
 CREATE TABLE AirConditioner (

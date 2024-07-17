@@ -31,13 +31,17 @@ class DatabaseAccess {
     public:
         DatabaseAccess();
         ~DatabaseAccess();
-        ThingsIds getThingsIds(MYSQL *conn);
-        void getSensorNodeData(double &temp, double &humid, double &wind, int &pm25, int &time, int sensor_id);
+        ThingsIds getThingsIds(MYSQL *con);
+        void getSensorNodeData(double &temp, double &humid, double &wind, double &pm25, int &time, int sensor_id);
         void getEnergyMeasureData(double &voltage, double &current, int &frequency, double &active_power, double &power_factor, int &time, int em_id);
         void getFanData(double &set_speed, int &control_mode, int &set_time, int &time, int fan_id);
         void getPMVData(double &met, double &clo, double &pmvref, double &outdoor_temp);
         void getAirConditionerData(double &set_temp, bool &state, bool &control_mode, int &time, int ac_id);
         void finishWithError(MYSQL* con);
+        struct connection_details mysqlD;
+        void getFanSensorLinks(int fan_id, std::vector<int>& sensor_links);
+        void getACSensorLinks(int ac_id, std::vector<int>& sensor_links);
+        void parseSensorLinks(const std::string& links_str, std::vector<int>& sensor_links);
 };
 
 #endif // DATABASE_ACCESS_H

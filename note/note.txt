@@ -73,3 +73,8 @@ CREATE TABLE AirConditioner (
 --------------------------
 How to recover lost contents after a git pull:
 git reset HEAD --hard
+
+-------------------------
+How to build a Si Project in raspi:
+cd Z3Gateway_Prokit2
+make -f Z3Gateway_Prokit2.Makefile

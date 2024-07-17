@@ -42,7 +42,7 @@ class PMV_Data {
 
 class FanNode {
     private:
-        int *sensor_link;
+        std::vector<int> fan_sensorlinks;
         int control_mode;
         int period;
     public:
@@ -52,7 +52,7 @@ class FanNode {
         double max_speed;
 
         void cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list);
-        void get_sensor_link();
+        void get_sensor_link(std::vector<int> sensorlinks);
         void set_speed(double s);
         void set_control_mode(int i);
         void set_time(int second);
@@ -61,7 +61,7 @@ class FanNode {
 
 class ACNode {
     private:
-        int* sensor_link;
+        std::vector<int> ac_sensorlinks;
         int control_mode;
         int period;
     public:
@@ -71,7 +71,7 @@ class ACNode {
         double pmv_avg;
 
         void cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list);
-        void get_sensor_link();
+        void get_sensor_link(std::vector<int> sensorlinks);
         void set_temp(int t);
         void set_control_mode(int value);
         void set_state(bool s);

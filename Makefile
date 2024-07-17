@@ -2,7 +2,7 @@
 CXX := g++
 
 # Define any compile-time flags
-CXXFLAGS := -std=c++17 -Wall -Wextra -g -I./include
+CXXFLAGS := -std=c++17 -g -I./include
 
 # Define the library directories
 LDFLAGS := -L/usr/include/mariadb/mysql -lmariadbclient

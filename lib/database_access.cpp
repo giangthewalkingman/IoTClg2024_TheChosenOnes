@@ -2,10 +2,10 @@
 
 MYSQL *con;
 
-void finish_with_error(MYSQL *con) {
-    fprintf(stderr, "%s\n", mysql_error(con));
+void finish_with_error(MYSQL *connection) {
+    fprintf(stderr, "%s\n", mysql_error(connection));
     mysql_close(con); 
-    exit(1);     
+    // exit(1);     
 }
 
 MYSQL* mysql_connection_setup(struct connection_details mysql_details) {
@@ -13,7 +13,9 @@ MYSQL* mysql_connection_setup(struct connection_details mysql_details) {
 
     if (!mysql_real_connect(connection, mysql_details.server, mysql_details.user, mysql_details.password, mysql_details.database, 0, NULL, 0)) {
         std::cout << "Connection Error: " << mysql_error(connection) << std::endl;
-        exit(1);
+        // exit(1);
+    } else {
+        std::cout << "Connection Success\n";
     }
 
     return connection;
@@ -22,7 +24,7 @@ MYSQL* mysql_connection_setup(struct connection_details mysql_details) {
 MYSQL_RES* mysql_execute_query(MYSQL *connection, const char *sql_query) {
     if (mysql_query(connection, sql_query)) {
         std::cout << "MySQL Query Error: " << mysql_error(connection) << std::endl;
-        exit(1);
+        // exit(1);
     }
 
     return mysql_use_result(connection);
@@ -34,7 +36,7 @@ bool check_sensor_id_exists(MYSQL *connection, int sensor_id) {
 
     if (mysql_query(connection, query)) {
         std::cout << "MySQL Query Error: " << mysql_error(connection) << std::endl;
-        exit(1);
+        // exit(1);
     }
 
     MYSQL_RES *res = mysql_store_result(connection);
@@ -45,21 +47,25 @@ bool check_sensor_id_exists(MYSQL *connection, int sensor_id) {
 }
 
 DatabaseAccess::DatabaseAccess() {
-    struct connection_details mysqlD;
     mysqlD.server = "localhost";
     mysqlD.user = "giang_mariadb";
     mysqlD.password = "k";
     mysqlD.database = "iot_clg_db";
 
-    con = mysql_connection_setup(mysqlD);
+    // con = mysql_connection_setup(mysqlD);
 }
 
 DatabaseAccess::~DatabaseAccess() {
-    mysql_close(con);
+    // mysql_close(con);
 }
 
-void DatabaseAccess::getSensorNodeData(double &temp, double &humid, double &wind, int &pm25, int &time, int sensor_id) {
+void DatabaseAccess::getSensorNodeData(double &temp, double &humid, double &wind, double &pm25, int &time, int sensor_id) {
     std::ostringstream query;
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
+    
     query << "SELECT temp, humid, wind, pm25, time FROM SensorNode WHERE sensor_id = " << sensor_id;
 
     if (mysql_query(con, query.str().c_str())) {
@@ -84,9 +90,14 @@ void DatabaseAccess::getSensorNodeData(double &temp, double &humid, double &wind
     }
 
     mysql_free_result(result);
+    mysql_close(con);
 }
 
 void DatabaseAccess::getEnergyMeasureData(double &voltage, double &current, int &frequency, double &active_power, double &power_factor, int &time, int em_id) {
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
     std::ostringstream query;
     query << "SELECT voltage, current, frequency, active_power, power_factor, time FROM EnergyMeasure WHERE em_id = " << em_id;
 
@@ -113,9 +124,15 @@ void DatabaseAccess::getEnergyMeasureData(double &voltage, double &current, int 
     }
 
     mysql_free_result(result);
+    mysql_close(con);
 }
 
 void DatabaseAccess::getFanData(double &set_speed, int &control_mode, int &set_time, int &time, int fan_id) {
+    
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
     std::ostringstream query;
     query << "SELECT set_speed, control_mode, set_time, time FROM Fan WHERE fan_id = " << fan_id;
 
@@ -140,9 +157,15 @@ void DatabaseAccess::getFanData(double &set_speed, int &control_mode, int &set_t
     }
 
     mysql_free_result(result);
+    mysql_close(con);
 }
 
 void DatabaseAccess::getAirConditionerData(double &set_temp, bool &state, bool &control_mode, int &time, int ac_id) {
+    
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
     std::ostringstream query;
     query << "SELECT set_temp, state, control_mode, time FROM AirConditioner WHERE ac_id = " << ac_id;
 
@@ -167,10 +190,17 @@ void DatabaseAccess::getAirConditionerData(double &set_temp, bool &state, bool &
     }
 
     mysql_free_result(result);
+    mysql_close(con);
 }
 
 void DatabaseAccess::getPMVData(double &met, double &clo, double &pmvref, double &outdoor_temp) {
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
+    std::cout << "hlw\n"; 
     if (mysql_query(con, "SELECT met, clo, pmvref FROM PMVtable")) {
+        std::cout << "Query is unsuccessful\n"; 
         finish_with_error(con);
     }
 
@@ -191,25 +221,96 @@ void DatabaseAccess::getPMVData(double &met, double &clo, double &pmvref, double
     }
 
     mysql_free_result(result);
+    mysql_close(con);
 }
 
-ThingsIds DatabaseAccess::getThingsIds(MYSQL *conn) {
+// ThingsIds DatabaseAccess::getThingsIds(MYSQL *connection) {
+//     MYSQL_RES *res;
+//     MYSQL_ROW row;
+//     ThingsIds thingsIds;
+//     // Query to get sensor IDs
+//     if (mysql_query(connection, "SELECT id FROM RegistrationSensor")) {
+//         std::cerr << "SELECT id FROM RegistrationSensor failed. " << mysql_error(connection) << "\n";
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     res = mysql_store_result(connection);
+//     if (res == NULL) {
+//         std::cerr << "mysql_store_result() failed. " << mysql_error(connection) << "\n";
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     while ((row = mysql_fetch_row(res)) != NULL) {
+//         thingsIds.sensor_ids.push_back(std::stoi(row[0]));
+//     }
+//     mysql_free_result(res);
+
+//     // Query to get fan IDs
+//     if (mysql_query(connection, "SELECT id FROM RegistrationFan")) {
+//         std::cerr << "SELECT id FROM RegistrationFan failed. " << mysql_error(connection) << "\n";
+//         mysql_close(connection);
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     res = mysql_store_result(connection);
+//     if (res == NULL) {
+//         std::cerr << "mysql_store_result() failed. " << mysql_error(connection) << "\n";
+//         mysql_close(connection);
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     while ((row = mysql_fetch_row(res)) != NULL) {
+//         thingsIds.fan_ids.push_back(std::stoi(row[0]));
+//     }
+//     mysql_free_result(res);
+
+//     // Query to get AC IDs
+//     if (mysql_query(connection, "SELECT id FROM RegistrationAC")) {
+//         std::cerr << "SELECT id FROM RegistrationAC failed. " << mysql_error(connection) << "\n";
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     res = mysql_store_result(connection);
+//     if (res == NULL) {
+//         std::cerr << "mysql_store_result() failed. " << mysql_error(connection) << "\n";
+//         // exit(EXIT_FAILURE);
+//     }
+
+//     while ((row = mysql_fetch_row(res)) != NULL) {
+//         thingsIds.ac_ids.push_back(std::stoi(row[0]));
+//     }
+//     mysql_free_result(res);
+
+//     // Close the connection
+//     mysql_close(connection);
+
+//     return thingsIds;
+// }
+
+
+ThingsIds DatabaseAccess::getThingsIds(MYSQL *connection) {
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return ThingsIds();
+    }
+    std::cout << "alo\n";
+
     MYSQL_RES *res;
     MYSQL_ROW row;
     ThingsIds thingsIds;
 
-    conn = mysql_init(NULL);
-
     // Query to get sensor IDs
-    if (mysql_query(conn, "SELECT id FROM RegistrationSensor")) {
-        std::cerr << "SELECT id FROM RegistrationSensor failed. " << mysql_error(conn) << "\n";
-        exit(EXIT_FAILURE);
+    if (mysql_query(con, "SELECT id FROM RegistrationSensor")) {
+        std::cerr << "SELECT id FROM RegistrationSensor failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
-    res = mysql_store_result(conn);
+    res = mysql_store_result(con);
     if (res == NULL) {
-        std::cerr << "mysql_store_result() failed. " << mysql_error(conn) << "\n";
-        exit(EXIT_FAILURE);
+        std::cerr << "mysql_store_result() failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
     while ((row = mysql_fetch_row(res)) != NULL) {
@@ -218,17 +319,17 @@ ThingsIds DatabaseAccess::getThingsIds(MYSQL *conn) {
     mysql_free_result(res);
 
     // Query to get fan IDs
-    if (mysql_query(conn, "SELECT id FROM RegistrationFan")) {
-        std::cerr << "SELECT id FROM RegistrationFan failed. " << mysql_error(conn) << "\n";
-        mysql_close(conn);
-        exit(EXIT_FAILURE);
+    if (mysql_query(con, "SELECT id FROM RegistrationFan")) {
+        std::cerr << "SELECT id FROM RegistrationFan failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
-    res = mysql_store_result(conn);
+    res = mysql_store_result(con);
     if (res == NULL) {
-        std::cerr << "mysql_store_result() failed. " << mysql_error(conn) << "\n";
-        mysql_close(conn);
-        exit(EXIT_FAILURE);
+        std::cerr << "mysql_store_result() failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
     while ((row = mysql_fetch_row(res)) != NULL) {
@@ -237,15 +338,17 @@ ThingsIds DatabaseAccess::getThingsIds(MYSQL *conn) {
     mysql_free_result(res);
 
     // Query to get AC IDs
-    if (mysql_query(conn, "SELECT id FROM RegistrationAC")) {
-        std::cerr << "SELECT id FROM RegistrationAC failed. " << mysql_error(conn) << "\n";
-        exit(EXIT_FAILURE);
+    if (mysql_query(con, "SELECT id FROM RegistrationAC")) {
+        std::cerr << "SELECT id FROM RegistrationAC failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
-    res = mysql_store_result(conn);
+    res = mysql_store_result(con);
     if (res == NULL) {
-        std::cerr << "mysql_store_result() failed. " << mysql_error(conn) << "\n";
-        exit(EXIT_FAILURE);
+        std::cerr << "mysql_store_result() failed: " << mysql_error(con) << std::endl;
+        mysql_close(con);
+        return thingsIds;
     }
 
     while ((row = mysql_fetch_row(res)) != NULL) {
@@ -253,8 +356,98 @@ ThingsIds DatabaseAccess::getThingsIds(MYSQL *conn) {
     }
     mysql_free_result(res);
 
-    // Close the connection
-    mysql_close(conn);
+    // Debug output
+    std::cout << "Sensor IDs: ";
+    for (const auto& id : thingsIds.sensor_ids) {
+        std::cout << id << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Fan IDs: ";
+    for (const auto& id : thingsIds.fan_ids) {
+        std::cout << id << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "AC IDs: ";
+    for (const auto& id : thingsIds.ac_ids) {
+        std::cout << id << " ";
+    }
+    std::cout << std::endl;
+
+    mysql_close(con);
 
     return thingsIds;
+}
+
+void DatabaseAccess::getFanSensorLinks(int fan_id, std::vector<int>& sensor_links) {
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
+
+    std::ostringstream query;
+    query << "SELECT sensor_links FROM RegistrationFan WHERE id = " << fan_id;
+
+    if (mysql_query(con, query.str().c_str())) {
+        finish_with_error(con);
+        return;
+    }
+
+    MYSQL_RES *result = mysql_store_result(con);
+    if (result == NULL) {
+        finish_with_error(con);
+        return;
+    }
+
+    MYSQL_ROW row;
+    if ((row = mysql_fetch_row(result))) {
+        std::string links_str(row[0]);
+        parseSensorLinks(links_str, sensor_links);
+    } else {
+        std::cerr << "No data found for fan_id: " << fan_id << std::endl;
+    }
+
+    mysql_free_result(result);
+    mysql_close(con);
+}
+
+void DatabaseAccess::getACSensorLinks(int ac_id, std::vector<int>& sensor_links) {
+    con = mysql_connection_setup(mysqlD);
+    if (con == NULL) {
+        return;
+    }
+
+    std::ostringstream query;
+    query << "SELECT sensor_links FROM RegistrationAC WHERE id = " << ac_id;
+
+    if (mysql_query(con, query.str().c_str())) {
+        finish_with_error(con);
+        return;
+    }
+
+    MYSQL_RES *result = mysql_store_result(con);
+    if (result == NULL) {
+        finish_with_error(con);
+        return;
+    }
+
+    MYSQL_ROW row;
+    if ((row = mysql_fetch_row(result))) {
+        std::string links_str(row[0]);
+        parseSensorLinks(links_str, sensor_links);
+    } else {
+        std::cerr << "No data found for ac_id: " << ac_id << std::endl;
+    }
+
+    mysql_free_result(result);
+    mysql_close(con);
+}
+
+void DatabaseAccess::parseSensorLinks(const std::string& links_str, std::vector<int>& sensor_links) {
+    std::stringstream ss(links_str.substr(1, links_str.size() - 2)); // Remove '[' and ']'
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        sensor_links.push_back(std::stoi(item));
+    }
 }

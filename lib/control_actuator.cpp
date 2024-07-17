@@ -83,9 +83,9 @@ void PMV_Data::cal_pmv(int id) {
 
 void FanNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     double pmv_sum = 0;
-    for (int i = 0; i < sizeof(sensor_link); i++) {
+    for (int i = 0; i < 1; i++) {
         for (auto& item : sensor_env_list) {
-            if (item.sensor_id == sensor_link[i]) {
+            if (item.sensor_id == i) {
                 item.get_data(i);
                 item.cal_pmv(i);
                 pmv_sum += item.pmv;
@@ -93,10 +93,12 @@ void FanNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
             }
         }
     }
-    pmv_avg = pmv_sum / sizeof(sensor_link);
+    pmv_avg = pmv_sum / 1;
 }
 
-void FanNode::get_sensor_link() {}
+void FanNode::get_sensor_link(std::vector<int> sensorlinks) {
+    fan_sensorlinks = sensorlinks;
+}
 
 void FanNode::set_speed(double s) {
     speed = s;
@@ -135,19 +137,21 @@ void FanNode::control_fan_pmv_model(std::vector<PMV_Data>& sensor_env_list, doub
 
 void ACNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     double pmv_sum = 0;
-    for (int i = 0; i < sizeof(sensor_link); i++) {
+    for (int i = 0; i < 2; i++) {
         for (auto& item : sensor_env_list) {
-            if (item.sensor_id == sensor_link[i]) {
+            if (item.sensor_id == i) {
                 item.get_data(i); // query
                 item.cal_pmv(i);
                 pmv_sum += item.pmv;
             }
         }
     }
-    pmv_avg = pmv_sum / sizeof(sensor_link);
+    pmv_avg = pmv_sum / 2;
 }
 
-void ACNode::get_sensor_link() {}
+void ACNode::get_sensor_link(std::vector<int> sensorlinks) {
+    ac_sensorlinks = sensorlinks;
+}
 
 void ACNode::set_temp(int t) {
     ac_temp = t;
