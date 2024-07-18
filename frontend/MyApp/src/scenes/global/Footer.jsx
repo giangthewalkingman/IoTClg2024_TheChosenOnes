@@ -20,7 +20,7 @@ function Copyright(props) {
       <Typography variant="body2" color="text.secondary" align="center" {...props}>
         {'Copyright © '}
         <Link color="inherit" href="https://hust.edu.vn/">
-          IPAC
+          IoTClg2024-TheChosenOnes
         </Link>
         {' '}
         {new Date().getFullYear()}
@@ -110,7 +110,7 @@ const Footer = (props) => {
                         }}
                     >
                         <Typography variant="h4" color="text.primary" gutterBottom>
-                        Smart Farm
+                        Smart Building
                         </Typography>
                     </Box>
 

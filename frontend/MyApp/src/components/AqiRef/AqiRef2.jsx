@@ -5,7 +5,7 @@ import ThermostatIcon from '@mui/icons-material/Thermostat';
 import InvertColorsIcon from '@mui/icons-material/InvertColors';
 import FilterDramaIcon from '@mui/icons-material/FilterDrama';
 import SpeedIcon from '@mui/icons-material/Speed';
-import convertTime from "../../data/TimeConvert";
+import { convertTimeLocal } from "../../data/TimeConvert";
 
 export default function AqiRef({callbackSetSignIn, time_delay})
 {
@@ -29,22 +29,10 @@ export default function AqiRef({callbackSetSignIn, time_delay})
     {
         try {
             const data_response = await fetch(url);
-            // const data_response = [
-            //     {
-            //         'temp': 24.3,
-            //         'humid': 70,
-            //         'wind': 4.3,
-            //         'aqi': 66,
-            //         'time': 'Fri, 24 May 2024 18:00:00',
-            //     }
-            // ];
-            // const props = Object.keys(data_response);
             if (data_response.status === 200) {   
-            // if (1) {   
               const data_json = await data_response.json();
-            //   const data_json = data_response;
               if (data_json) {
-                data_json.time = convertTime(data_json.time)
+                data_json.time = convertTimeLocal(data_json.time)
 								if (data_json.aqi <= 50) {
 									data_json.rating = rating_index[1]['level'];
 									data_json.color = rating_index[1]['colour'];

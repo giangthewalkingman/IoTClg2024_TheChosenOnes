@@ -9,7 +9,6 @@ import mysql.connector
 from mysql.connector import Error
 from flask_cors import CORS
 import mqtt_server
-from mqtt_server import node_info_ack_received, ack_info
 
 app = Flask(__name__)
 CORS(app)
@@ -179,8 +178,8 @@ def roomGetAll():
 
     return jsonify(result), 200
 
-@app.route('/room/getById/<room_id>', methods=['GET'])
-def room_get_by_id(room_id):
+@app.route('/room/getById', methods=['GET'])
+def room_get_by_id():
     db = create_connection()
     if db is None:
         return jsonify({"error": "Unable to connect to database"}), 500
@@ -195,9 +194,8 @@ def room_get_by_id(room_id):
                 room r
             JOIN 
                 building b ON r.building_id = b.building_id
-            WHERE r.room_id = %s
             """
-        cursor.execute(query, (room_id,))
+        cursor.execute(query,)
         rows = cursor.fetchall()
 
         result = []
@@ -1320,7 +1318,7 @@ def local_weather_insert():
             return jsonify({"error": "Unable to fetch data from AQICN API"}), 500
 
         data = response.json()
-        # print(data)
+        print("hello")
         try:
             iaqi = data['rxs']['obs'][0]['msg']['iaqi']
             temp = iaqi['t']['v']
@@ -1328,7 +1326,12 @@ def local_weather_insert():
             wind = iaqi['w']['v']
             aqi = data['rxs']['obs'][0]['msg']['aqi']
             time = data['rxs']['obs'][0]['msg']['time']['s']
-
+            print(iaqi)
+            print(temp)
+            print(humid)
+            print(wind)
+            print(aqi)
+            print(time)
             formatted_data = {
                 'temp': temp,
                 'humid': humid,
@@ -1339,15 +1342,16 @@ def local_weather_insert():
         except KeyError as e:
             print(f"Key error: {e}")
             return jsonify({"error": "Unable to format data from AQICN API"}), 500
-
+        print("get data")
         cursor = db.cursor()
         insert_query = """
-            INSERT INTO local_weather (temp, humid, wind, aqi, time)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO local_weather (temp, humid, wind, co2, aqi, time)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
-        values = (formatted_data['temp'], formatted_data['humid'], formatted_data['wind'], formatted_data['aqi'],
+        values = (formatted_data['temp'], formatted_data['humid'], formatted_data['wind'],0, formatted_data['aqi'],
                   formatted_data['time'])
         cursor.execute(insert_query, values)
+        print("imported")
         db.commit()
 
         cursor.close()
@@ -1668,11 +1672,13 @@ def update_gateway():
 
     cursor = db.cursor()
     if mac is None:
-        cursor.execute("SELECT * FROM `registration_gateway` WHERE gateway_id = %s", (gateway_id,))
+        query = "SELECT * FROM registration_gateway WHERE gateway_id = %s"
+        cursor.execute(query, (gateway_id,))
     else:
-        cursor.execute("SELECT * FROM `registration_gateway` WHERE mac = %s", (mac,))
+        query = "SELECT * FROM registration_gateway WHERE mac = %s"
+        cursor.execute(query, (mac,))
     key = [desc[0] for desc in cursor.description]
-    check_mac = [dict(zip(key, row)) for row in cursor.fetchone()]
+    check_mac = [dict(zip(key, row)) for row in cursor.fetchall()]
 
     if len(check_mac) == 0:
         return jsonify({"error": "No MAC address or gateway ID found"}), 400
@@ -1685,7 +1691,7 @@ def update_gateway():
         else:
             linking_status = mqtt_server.gatewayLinking(mac)
             if linking_status == True:
-                cursor.execute("UPDATE registration_gateway SET `room_id` = %s, `x_pos` = %s,`y_pos` = %s, `connected` = 1, WHERE mac = %s", (room_id, x_pos, y_pos, mac,))
+                cursor.execute("UPDATE registration_gateway SET `room_id` = %s, `x_pos` = %s,`y_pos` = %s, `connected` = 1 WHERE mac = %s", (room_id, x_pos, y_pos, mac,))
                 db.commit()
         cursor.close()
         db.close()
@@ -2069,11 +2075,11 @@ def connect_key():
     
     # After sending install code, wait for ack again to confirm device connected
     print(f"Install code {connect_key} sent to gateway")
-    node_info_ack_received.clear()
-    if not node_info_ack_received.wait(timeout=60):
+    mqtt_server.node_info_ack_received.clear()
+    if not mqtt_server.node_info_ack_received.wait(timeout=60):
         return jsonify({"error": "Gateway network timeout"}), 408 # Request timeout
 
-    return jsonify({"message": "Install code sent to gateway", "ack": ack_info}), 200  # OK
+    return jsonify({"message": "Install code sent to gateway"}), 200  # OK
 
 @app.route('/fan/control', methods=['POST'])
 def control_fan():
@@ -2174,10 +2180,15 @@ def send_env_pmv(room_id):
 
     return jsonify({"message": "Sent control request to gateway"}), 200  # OK
 
+# def run_mqtt_server():
+#     mqtt_server.main()
+
 if __name__ == '__main__':
     weather_process = Process(target=schedule_weather_insert)
     weather_process.start()
 
-    app.run(debug=True)
+    # mqtt_server_start = Process(target=run_mqtt_server)
+    # mqtt_server_start.start()
+    app.run(debug=True, use_reloader=False)
     # Call server_publish.py
     # subprocess.Popen(['python', 'server_publish.py'])

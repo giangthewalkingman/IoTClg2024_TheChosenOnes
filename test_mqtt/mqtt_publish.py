@@ -9,8 +9,7 @@ broker = BROKER
 port = PORT
 
 # Define the topic to publish to
-topic = "server/connect_key_ack"
-
+topic = "gateway/permission"
 # Create a new MQTT client instance
 client = mqtt.Client()
 
@@ -30,7 +29,14 @@ def publish_message(message):
         print(f"Failed to send message to topic {topic}")
 
 # Publish a test message
-publish_message({"a": 2023})
+publish_message(
+    {"operator": "server_connect",
+        "status": 1,
+        "info": {
+            "mac": '232323',
+            "allowed": 1,
+        }
+    })
 
 # Disconnect the client
 client.disconnect()

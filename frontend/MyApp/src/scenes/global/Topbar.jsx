@@ -42,7 +42,7 @@ const Topbar = ({setIsSignin}) => {
 					//   width="200px"
 					//   height="100px"
 					style={{ maxWidth: '120%', maxHeight: '120%' }}
-					src={logo}
+					src="https://www.nicepng.com/png/detail/257-2575217_png-file-svg-icon-smart-building-png.png"
 					// style={{ cursor: "pointer", borderRadius: "50%" }}
 					/>
 				</Box>

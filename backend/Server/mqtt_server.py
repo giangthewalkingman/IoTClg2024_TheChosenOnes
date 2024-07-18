@@ -45,6 +45,8 @@ MQTT_SEND_ENV_PARAMS_ACK =      'server/env_params_ack'
 MQTT_TOPIC_CONTROL_FAN_ACK =    'server/fan/control_ack'
 MQTT_TOPIC_CONTROL_AC_ACK =     'server/ac/control_ack'
 
+mqtt_client = None
+
 # Connect to MQTT broker
 def connect_mqtt():
     client = mqtt.Client()
@@ -178,15 +180,16 @@ def gatewayRegistry(message):
     
     cursor = db.cursor()
     query = """INSERT INTO `registration_gateway`(`room_id`, `connected`, `mac`, `description`, `x_pos`, `y_pos`) 
-    VALUES ('-1','0',%s,'%s','-1','-1')"""
-    cursor.execute(query, (mac, mac,))
-    cursor.commit()
+    VALUES (%s,%s,%s,%s,%s,%s)"""
+    cursor.execute(query, ('-1', '0',mac, mac,'-1','-1'))
+    db.commit()
     print(f"Gateway with MAC address {mac} is ready to join network")
     cursor.close()
     db.close()
 
 # This function will be executed if MAC address is found in database
 def gatewayLinking(mac):
+    global mqtt_client
     message = {
         "operator": "gateway_permission",
         "status": 1,
@@ -374,7 +377,7 @@ def save_fan_data(data):
     query = "INSERT INTO fan (fan_id, set_speed, control_mode, set_time, status) VALUES (%s, %s, %s, %s, %s)"
     cursor.execute(query, (data['fan_id'], data['set_speed'], data['control_mode'], data['set_time'], data['status']))
     db.commit()
-    print(f"Saved sensor data: {data}")
+    print(f"Saved fan data: {data}")
     cursor.close()
     db.close()
 
@@ -389,7 +392,7 @@ def save_em_data(data):
     query = "INSERT INTO energy_measure (em_id, voltage, current, frequency, active_power, power_factor, status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     cursor.execute(query, (data['em_id'], data['voltage'], data['current'], data['frequency'], data['active_power'], data['power_factor'], data['status']))
     db.commit()
-    print(f"Saved sensor data: {data}")
+    print(f"Saved em data: {data}")
     cursor.close()
     db.close()
 
@@ -404,7 +407,7 @@ def save_ac_data(data):
     query = "INSERT INTO air_conditioner (ac_id, set_temp, control_mode, state) VALUES (%s, %s, %s, %s)"
     cursor.execute(query,(data['ac_id'], data['set_temp'], data['control_mode'], data['state']))
     db.commit()
-    print(f"Saved sensor data: {data}")
+    print(f"Saved AC data: {data}")
     cursor.close()
     db.close()
 
@@ -534,15 +537,16 @@ def keepalive_thread():
             mqtt_client.publish(MQTT_TOPIC_KEEPALIVE, json.dumps(mqtt_message))
         time.sleep(3600)  # Sleep for 1 hour
 
-
-# # Initialize MQTT client
 mqtt_client = connect_mqtt()
 
 # # Start the threads
 mqtt_thread = threading.Thread(target=run_mqtt_client)
-keepalive_thread = threading.Thread(target=keepalive_thread)
+keepalive = threading.Thread(target=keepalive_thread)
 
 mqtt_thread.start()
-keepalive_thread.start()
+keepalive.start()
 
-# mqtt_client.loop_forever()
+
+# # Initialize MQTT client
+# if __name__ == '__main__':
+#     main()

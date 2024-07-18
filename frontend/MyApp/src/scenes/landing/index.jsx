@@ -39,7 +39,7 @@ const Landing = () => {
     }
 
     const backend_host = host;
-    const api_room_data = `http://${backend_host}/building/getall`;
+    const api_room_data = `http://${backend_host}/room/getById`;
 
     const get_room_data = async (url) => {
         try {
@@ -49,6 +49,7 @@ const Landing = () => {
             const data_json = await data_response.json();
             if (data_json) {
               setRoom_data(data_json);
+              console.log(data_json);
               setIsLoading(false);
             } else {
               alert('No room data!');
@@ -110,10 +111,10 @@ const Landing = () => {
                             </Box>
                             <CardContent sx={{ flexGrow: 1 }}>
                                 <Typography gutterBottom variant="h4" component="h2" sx={{fontWeight: "bold"}}>
-                                    {room.name}
+                                    {room.description}
                                 </Typography>
                                 <Typography gutterBottom variant="h5" component="h3" sx={{fontWeight: 600}}>
-                                    {room.location}
+                                    {room.building_info.name} - {room.building_info.location}
                                 </Typography>
                                 <Box display="flex" justifyContent="space-between">
                                     <Typography>
