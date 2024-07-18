@@ -6,8 +6,7 @@ void pmv_ppd(
     const double& rh,
     const double& met,
     const double& clo,
-    double& pmv,
-    double& ppd
+    double& pmv
 ) {
     double vr = (met > 1) ? std::round((v + 0.3 * (met - 1)) * 1000) / 1000.0 : v;
     double clo_d = (met > 1.2) ? std::round(clo * (0.6 + 0.4 / met) * 1000) / 1000.0 : clo;
@@ -49,7 +48,7 @@ void pmv_ppd(
 
     double ts = 0.303 * std::exp(-0.036 * m) + 0.028;
     pmv = round(100 * ts * (m - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)) / 100.0;
-    ppd = round(10 * (100.0 - 95.0 * std::exp(-0.03353 * std::pow(pmv, 4.0) - 0.2179 * std::pow(pmv, 2.0)))) / 10;
+    // ppd = round(10 * (100.0 - 95.0 * std::exp(-0.03353 * std::pow(pmv, 4.0) - 0.2179 * std::pow(pmv, 2.0)))) / 10;
 }
 
 PMV_Data::PMV_Data(int sensor_id_, double temp_, double humid_, double wind_) {
@@ -59,13 +58,13 @@ PMV_Data::PMV_Data(int sensor_id_, double temp_, double humid_, double wind_) {
     wind = wind_;
 }
 
-void PMV_Data::get_data(int id) {
-    // instuction here
-}
+// void PMV_Data::get_data(int id) {
+//     // instuction here
+// }
 
-void PMV_Data::send_data(double met, double clo, double pmv_ref) {
-    // instruction here
-}
+// void PMV_Data::send_data(double met, double clo, double pmv_ref) {
+//     // instruction here
+// }
 
 void PMV_Data::get_max_air_speed(int id) {
     if (temp >= 25.5)
@@ -77,17 +76,17 @@ void PMV_Data::get_max_air_speed(int id) {
     }
 }
 
-void PMV_Data::cal_pmv(int id) {
-    // pmv calculation instruction here
-}
+// void PMV_Data::cal_pmv(int id) {
+//     // pmv calculation instruction here
+// }
 
 void FanNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     double pmv_sum = 0;
     for (int i = 0; i < 1; i++) {
         for (auto& item : sensor_env_list) {
             if (item.sensor_id == i) {
-                item.get_data(i);
-                item.cal_pmv(i);
+                // item.get_data(i);
+                // item.cal_pmv(i);
                 pmv_sum += item.pmv;
                 max_speed = item.wind_max;
             }
@@ -140,8 +139,8 @@ void ACNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     for (int i = 0; i < 2; i++) {
         for (auto& item : sensor_env_list) {
             if (item.sensor_id == i) {
-                item.get_data(i); // query
-                item.cal_pmv(i);
+                // item.get_data(i); // query
+                // item.cal_pmv(i);
                 pmv_sum += item.pmv;
             }
         }

@@ -20,8 +20,7 @@ void pmv_ppd(
     const double& rh,
     const double& met,
     const double& clo,
-    double& pmv,
-    double& ppd
+    double& pmv
 );
 
 class PMV_Data {

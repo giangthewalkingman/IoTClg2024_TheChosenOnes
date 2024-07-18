@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     std::cout << "This is the start of main function\n"; 
     // std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
     DatabaseAccess db;
-    // db.databaseInsertSample();
+    db.databaseInsertSample();
     // control_program(db);
     std::thread resetThread(reset_control_program, std::ref(db));
     resetThread.join();
@@ -89,12 +89,12 @@ void control_program(DatabaseAccess& db) {
         db.getSensorNodeData(temp, humid, wind, pm25, sensor_time, things_ids_array.sensor_ids[id]);
         std::cout << "truy van de lay Sensor node data - Success\n";
         PMV_Data pmv_data(things_ids_array.sensor_ids[id], temp, humid, wind);
-
+        pmv_ppd(temp, wind, humid, met, clo, pmv_data.pmv);
         pmv_data.get_max_air_speed(id);
         sensor_env_list.push_back(pmv_data);
     }
     
-    for (int id = 1; id <= things_ids_array.fan_ids.size(); id++) {
+    for (int id = 0; id < things_ids_array.fan_ids.size(); id++) {
         std::cout << "before get fan sensor link "<< id <<"\n";
         fan_node.fan_id = id;
         std::vector<int> fan_sensor_links;
@@ -105,7 +105,7 @@ void control_program(DatabaseAccess& db) {
         fan_node_list.push_back(fan_node);
         std::cout << "after get fan sensor link "<< id <<"\n";
     }
-    for (int id = 1; id <= things_ids_array.ac_ids.size(); id++) {
+    for (int id = 0; id < things_ids_array.ac_ids.size(); id++) {
         ac_node.ac_id = id;
         std::cout << "before get ac sensor link "<< id <<"\n";
         std::vector<int>ac_sensor_links;
@@ -135,15 +135,48 @@ void control_program(DatabaseAccess& db) {
             item.set_state(false);
         }
     }
-
     // sensor thread for cal pmv
     // 
 
     // control fans in multithreads
     std::vector<std::thread> control_fan_thread;
     for (auto& item : fan_node_list) {
-        control_fan_thread.emplace_back([&item, &pmv_ref, &sensor_env_list]() {
-            item.control_fan_pmv_model(sensor_env_list, pmv_ref);
+        control_fan_thread.emplace_back([&item, &pmv_ref, &sensor_env_list, &temp, &db, &met, &clo,
+                                        &humid, &wind, &pm25, &sensor_time]() {
+            // item.control_fan_pmv_model(sensor_env_list, pmv_ref);
+            if (item.pmv_avg <= 0.5 && item.pmv_avg >= -0.5) {
+                if (item.speed == 0)
+                    item.set_speed(0);
+                    printf("control fan: %d%\n", item.speed);
+                double pmv_diff;
+                // fan will reduce speed as pmv is convergent to pmv_ref
+                do {
+                    for (auto& item2 : sensor_env_list) {
+                        db.getSensorNodeData(temp, humid, wind, pm25, sensor_time, item2.sensor_id);
+                        item2.temp = temp;
+                        item2.humid = humid;
+                        item2.wind = wind;
+                        double pmv;
+                        pmv_ppd(temp, wind, humid, met, clo, pmv);
+                        item2.pmv = pmv;
+                    }
+                    item.set_speed(item.speed - SPEED_STEP);
+                    printf("control fan: %d%\n", item.speed);
+                    item.cal_pmv_avg(sensor_env_list);
+                    pmv_diff = item.pmv_avg - pmv_ref;
+                } while (pmv_diff < PMV_DIFF_THRESHOLD && pmv_diff > (-1 * PMV_DIFF_THRESHOLD));
+                if (item.speed > item.max_speed) {
+                    if (item.pmv_avg > -0.5) {
+                        item.set_speed(item.max_speed);
+                        printf("control fan: %d%\n", item.speed);
+                    }
+                    else {
+                        item.set_speed(0);
+                        printf("control fan: %d%\n", item.speed);
+                    }
+                        
+                }
+            }
         });
     }
     // wait for all threads complete
@@ -164,7 +197,7 @@ void reset_control_program(DatabaseAccess& db) {
         std::chrono::duration<double> elapsed = end - start;
         
         // Print the working time of control_program
-        std::cout << "control_program started at: " << start.time_since_epoch().count() << " and took: " << elapsed.count() << " seconds\n";
+        // std::cout << "control_program started at: " << start.time_since_epoch().count() << " and took: " << elapsed.count() << " seconds\n";
 
         // Sleep for 10 seconds before starting the next control program
         std::this_thread::sleep_for(std::chrono::minutes(5)); //Reset after 5 mins

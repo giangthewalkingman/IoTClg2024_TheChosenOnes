@@ -465,44 +465,44 @@ void DatabaseAccess::databaseInsertSample() {
     mysql_execute_query(con, pmv_query);
 
     // Insert sample data into RegistrationSensor
-    const char* reg_sensor_query = "INSERT INTO RegistrationSensor (id) VALUES (1), (2)";
+    const char* reg_sensor_query = "INSERT INTO RegistrationSensor (id) VALUES (0), (1)";
     mysql_execute_query(con, reg_sensor_query);
 
     // Insert sample data into SensorNode
     const char* sensor_node_query = "INSERT INTO SensorNode (temp, humid, wind, pm25, time, sensor_id) VALUES "
-                                    "(24.5, 60.0, 1.5, 35, 1622559182, 1), "
-                                    "(25.5, 55.0, 1.0, 30, 1622559182, 2)";
+                                    "(24.5, 60.0, 1.5, 35, 1622559182, 0), "
+                                    "(25.5, 55.0, 1.0, 30, 1622559182, 1)";
     mysql_execute_query(con, sensor_node_query);
 
     // Insert sample data into RegistrationEnergy
-    const char* reg_energy_query = "INSERT INTO RegistrationEnergy (id) VALUES (1)";
+    const char* reg_energy_query = "INSERT INTO RegistrationEnergy (id) VALUES (0)";
     mysql_execute_query(con, reg_energy_query);
 
     // Insert sample data into EnergyMeasure
     const char* energy_measure_query = "INSERT INTO EnergyMeasure (voltage, current, frequency, active_power, power_factor, time, em_id) VALUES "
-                                       "(230.0, 5.0, 50, 1150.0, 0.98, 1622559182, 1)";
+                                       "(230.0, 5.0, 50, 1150.0, 0.98, 1622559182, 0)";
     mysql_execute_query(con, energy_measure_query);
 
     // Insert sample data into RegistrationFan
     const char* reg_fan_query = "INSERT INTO RegistrationFan (id, sensor_links, model) VALUES "
-                                "(1, '[1]', 'Model A'), "
-                                "(2, '[2]', 'Model B')";
+                                "(0, '[0]', 'Model A'), "
+                                "(1, '[1]', 'Model B')";
     mysql_execute_query(con, reg_fan_query);
 
     // Insert sample data into Fan
     const char* fan_query = "INSERT INTO Fan (set_speed, control_mode, set_time, time, fan_id) VALUES "
-                            "(2.5, 1, 3600, 1622559182, 1), "
-                            "(3.0, 0, 3600, 1622559182, 2)";
+                            "(2.5, 1, 3600, 1622559182, 0), "
+                            "(3.0, 1, 3600, 1622559182, 1)";
     mysql_execute_query(con, fan_query);
 
     // Insert sample data into RegistrationAC
     const char* reg_ac_query = "INSERT INTO RegistrationAC (id, sensor_links, model) VALUES "
-                               "(1, '[1,2]', 'AC Model 1')";
+                               "(0, '[0,1]', 'AC Model 1')";
     mysql_execute_query(con, reg_ac_query);
 
     // Insert sample data into AirConditioner
     const char* ac_query = "INSERT INTO AirConditioner (set_temp, state, control_mode, time, ac_id) VALUES "
-                           "(22.0, true, false, 1622559182, 1)";
+                           "(22.0, true, false, 1622559182, 0)";
     mysql_execute_query(con, ac_query);
     mysql_close(con);
 }
