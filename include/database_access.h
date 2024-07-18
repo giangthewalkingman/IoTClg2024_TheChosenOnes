@@ -42,6 +42,7 @@ class DatabaseAccess {
         void getFanSensorLinks(int fan_id, std::vector<int>& sensor_links);
         void getACSensorLinks(int ac_id, std::vector<int>& sensor_links);
         void parseSensorLinks(const std::string& links_str, std::vector<int>& sensor_links);
+        void databaseInsertSample();
 };
 
 #endif // DATABASE_ACCESS_H

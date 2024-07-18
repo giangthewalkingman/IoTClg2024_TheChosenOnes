@@ -14,12 +14,12 @@
 //Private functions
 void databaseSetup();
 void databaseInsertSample(DatabaseAccess& db);
-void runControlProgramWithReset(DatabaseAccess& db);
 void control_program(DatabaseAccess& db);
 // Signal handler to reset control program manually
 std::atomic<bool> reset_requested(false);
 void signalHandler(int signum);
 bool checkForNodeChanges(DatabaseAccess& db);
+void reset_control_program(DatabaseAccess& db);
 
 
 // 
@@ -27,8 +27,10 @@ int main(int argc, char *argv[]) {
     std::cout << "This is the start of main function\n"; 
     // std::signal(SIGINT, signalHandler); // Handle Ctrl+C signal to manually reset
     DatabaseAccess db;
-    // databaseInsertSample(db);
-    control_program(db);
+    // db.databaseInsertSample();
+    // control_program(db);
+    std::thread resetThread(reset_control_program, std::ref(db));
+    resetThread.join();
     // while (true) {
     //     reset_requested.store(false);
     //     std::thread control_program_thread(runControlProgramWithReset, std::ref(db));
@@ -54,8 +56,8 @@ void control_program(DatabaseAccess& db) {
     std::vector<PMV_Data> sensor_env_list;
     std::vector<FanNode> fan_node_list;
     std::vector<ACNode> ac_node_list;
-    std::vector<int> fan_sensorlink_list;
-    std::vector<int> ac_sensorlink_list;
+    // std::vector<int> fan_sensorlink_list;
+    // std::vector<int> ac_sensorlink_list;
 
     //  room information
     double met, pmv_ref, outdoor_temp, clo;
@@ -91,20 +93,25 @@ void control_program(DatabaseAccess& db) {
         pmv_data.get_max_air_speed(id);
         sensor_env_list.push_back(pmv_data);
     }
-    for (int id = 0; id < things_ids_array.fan_ids.size(); id++) {
-        std::cout << "before get sensor link\n";
+    
+    for (int id = 1; id <= things_ids_array.fan_ids.size(); id++) {
+        std::cout << "before get fan sensor link "<< id <<"\n";
         fan_node.fan_id = id;
-        fan_node.get_sensor_link(); // truy van
+        std::vector<int> fan_sensor_links;
+        db.getFanSensorLinks(id, fan_sensor_links);
+        fan_node.get_sensor_link(fan_sensor_links); // truy van
         // std::cout << "after get sensor link\n";
         fan_node.cal_pmv_avg(sensor_env_list);
         fan_node_list.push_back(fan_node);
-        std::cout << "after get sensor link\n";
+        std::cout << "after get fan sensor link "<< id <<"\n";
     }
-    for (int id = 0; id < things_ids_array.ac_ids.size(); id++) {
+    for (int id = 1; id <= things_ids_array.ac_ids.size(); id++) {
         ac_node.ac_id = id;
-        // std::cout << "before get sensor link\n";
-        ac_node.get_sensor_link();
-        std::cout << "after get sensor link\n";
+        std::cout << "before get ac sensor link "<< id <<"\n";
+        std::vector<int>ac_sensor_links;
+        db.getACSensorLinks(id, ac_sensor_links);
+        ac_node.get_sensor_link(ac_sensor_links);
+        std::cout << "after get ac sensor link "<< id <<"\n";
         ac_node.cal_pmv_avg(sensor_env_list);
         ac_node_list.push_back(ac_node);
     }
@@ -145,83 +152,24 @@ void control_program(DatabaseAccess& db) {
     }
 }
 
-// Function to run the control program and reset after 5 minutes
-void runControlProgramWithReset(DatabaseAccess& db) {
-    std::atomic<bool> running(true);
+void reset_control_program(DatabaseAccess& db) {
+    while (true) {
+        auto start = std::chrono::high_resolution_clock::now();
 
-    auto control_program_thread = [&]() {
-        while (running.load()) {
-            control_program(db);
-        }
-    };
+        // Start a new thread to run control_program
+        std::thread control_thread(control_program, std::ref(db));
+        control_thread.detach(); // Detach the thread to allow it to run independently
 
-    auto reset_thread = [&]() {
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(5min);
-        running.store(false);
-    };
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        
+        // Print the working time of control_program
+        std::cout << "control_program started at: " << start.time_since_epoch().count() << " and took: " << elapsed.count() << " seconds\n";
 
-    std::thread cp_thread(control_program_thread);
-    std::thread rt_thread(reset_thread);
-
-    cp_thread.join();
-    rt_thread.join();
+        // Sleep for 10 seconds before starting the next control program
+        std::this_thread::sleep_for(std::chrono::minutes(5)); //Reset after 5 mins
+    }
 }
-
-void databaseInsertSample(DatabaseAccess& db) {
-    // Insert sample data into PMVtable
-    const char* pmv_query = "INSERT INTO PMVtable (met, clo, pmvref, outdoor_temp) VALUES "
-                            "(1.2, 0.5, 0.5, 25.0), "
-                            "(1.5, 0.7, 0.6, 30.0)";
-    mysql_execute_query(con, pmv_query);
-
-    // Insert sample data into RegistrationSensor
-    const char* reg_sensor_query = "INSERT INTO RegistrationSensor (id) VALUES (1), (2)";
-    mysql_execute_query(con, reg_sensor_query);
-
-    // Insert sample data into SensorNode
-    const char* sensor_node_query = "INSERT INTO SensorNode (temp, humid, wind, pm25, time, sensor_id) VALUES "
-                                    "(24.5, 60.0, 1.5, 35, 1622559182, 1), "
-                                    "(25.5, 55.0, 1.0, 30, 1622559182, 2)";
-    mysql_execute_query(con, sensor_node_query);
-
-    // Insert sample data into RegistrationEnergy
-    const char* reg_energy_query = "INSERT INTO RegistrationEnergy (id) VALUES (1)";
-    mysql_execute_query(con, reg_energy_query);
-
-    // Insert sample data into EnergyMeasure
-    const char* energy_measure_query = "INSERT INTO EnergyMeasure (voltage, current, frequency, active_power, power_factor, time, em_id) VALUES "
-                                       "(230.0, 5.0, 50, 1150.0, 0.98, 1622559182, 1)";
-    mysql_execute_query(con, energy_measure_query);
-
-    // Insert sample data into RegistrationFan
-    const char* reg_fan_query = "INSERT INTO RegistrationFan (id, sensor_links, model) VALUES "
-                                "(1, '[1]', 'Model A'), "
-                                "(2, '[2]', 'Model B')";
-    mysql_execute_query(con, reg_fan_query);
-
-    // Insert sample data into Fan
-    const char* fan_query = "INSERT INTO Fan (set_speed, control_mode, set_time, time, fan_id) VALUES "
-                            "(2.5, 1, 3600, 1622559182, 1), "
-                            "(3.0, 0, 3600, 1622559182, 2)";
-    mysql_execute_query(con, fan_query);
-
-    // Insert sample data into RegistrationAC
-    const char* reg_ac_query = "INSERT INTO RegistrationAC (id, sensor_links, model) VALUES "
-                               "(1, '[1,2]', 'AC Model 1')";
-    mysql_execute_query(con, reg_ac_query);
-
-    // Insert sample data into AirConditioner
-    const char* ac_query = "INSERT INTO AirConditioner (set_temp, state, control_mode, time, ac_id) VALUES "
-                           "(22.0, true, false, 1622559182, 1)";
-    mysql_execute_query(con, ac_query);
-}
-
-// Signal handler to reset control program manually
-void signalHandler(int signum) {
-    reset_requested.store(true);
-}
-
 void databaseSetup() {
     //
 }
