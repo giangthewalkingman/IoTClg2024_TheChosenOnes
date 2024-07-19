@@ -333,6 +333,7 @@ def sendNodeInfoAck(message):
             node_info_ack_received.set()
 
 def save_pmv_data(data):
+    print(data)
     db = create_connection()
     if db is None:
         print("Unable to connect to database")
@@ -345,7 +346,7 @@ def save_pmv_data(data):
     query = """INSERT INTO `pmv_table`
     (`room_id`, `sensor_id`, `met`, `clo`, `temp`, `wind`, `pmv_ref`, `pmv`, `status`) 
     VALUES ('%s','%s','%s','%s','%s','%s','%s','%s','1')"""
-    cursor.execute(query, (room_id, data['sensor_id'], data['met'], data['clo'], data['temp'], data['wind'], data['pmv_ref'], data["pmv"],))
+    cursor.execute(query, (room_id, data["info"]['sensor_id'], data["info"]['met'], data["info"]['clo'], data["info"]['temp'], data["info"]['wind'], data["info"]['pmv_ref'], data["info"]["pmv"], 1))
     db.commit()
     print(f"Saved pmv data: {data}")
     cursor.close()
@@ -360,7 +361,7 @@ def save_sensor_data(data):
     
     cursor = db.cursor()
     query = "INSERT INTO sensor_node (sensor_id, temp, wind, humid, pm25, status) VALUES (%s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (data['sensor_id'], data['temp'], data['wind'], data['humid'], data['pm25'], data['status']))
+    cursor.execute(query, (data["info"]['sensor_id'], data["info"]['temp'], data["info"]['wind'], data["info"]['humid'], data["info"]['pm25'], 1))
     db.commit()
     print(f"Saved sensor data: {data}")
     cursor.close()
@@ -375,7 +376,7 @@ def save_fan_data(data):
     
     cursor = db.cursor()
     query = "INSERT INTO fan (fan_id, set_speed, control_mode, set_time, status) VALUES (%s, %s, %s, %s, %s)"
-    cursor.execute(query, (data['fan_id'], data['set_speed'], data['control_mode'], data['set_time'], data['status']))
+    cursor.execute(query, (data["info"]['fan_id'], data["info"]['set_speed'], data["info"]['control_mode'], data["info"]['set_time'], 1))
     db.commit()
     print(f"Saved fan data: {data}")
     cursor.close()
@@ -390,7 +391,7 @@ def save_em_data(data):
     
     cursor = db.cursor()
     query = "INSERT INTO energy_measure (em_id, voltage, current, frequency, active_power, power_factor, status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (data['em_id'], data['voltage'], data['current'], data['frequency'], data['active_power'], data['power_factor'], data['status']))
+    cursor.execute(query, (data["info"]['em_id'], data["info"]['voltage'], data["info"]['current'], data["info"]['frequency'], data["info"]['active_power'], data["info"]['power_factor'], 1))
     db.commit()
     print(f"Saved em data: {data}")
     cursor.close()
@@ -404,8 +405,8 @@ def save_ac_data(data):
         return
     
     cursor = db.cursor()
-    query = "INSERT INTO air_conditioner (ac_id, set_temp, control_mode, state) VALUES (%s, %s, %s, %s)"
-    cursor.execute(query,(data['ac_id'], data['set_temp'], data['control_mode'], data['state']))
+    query = "INSERT INTO air_conditioner (ac_id, set_temp, control_mode, state, status) VALUES (%s, %s, %s, %s, %s)"
+    cursor.execute(query,(data["info"]['ac_id'], data["info"]['set_temp'], data["info"]['control_mode'], data["info"]['state'], 1))
     db.commit()
     print(f"Saved AC data: {data}")
     cursor.close()

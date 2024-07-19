@@ -2138,7 +2138,8 @@ def control_ac():
                     LEFT JOIN registration_gateway rg
                     ON rg.gateway_id = ra.gateway_id
                     WHERE ra.ac_id = %s""", (ac_id,))
-    mac = cursor.fetchone()["mac"]
+    mac = cursor.fetchone()
+    print(mac)
     if mac is None:
         return jsonify({"error": "Control failed due to unknown gateway"}), 400
 
