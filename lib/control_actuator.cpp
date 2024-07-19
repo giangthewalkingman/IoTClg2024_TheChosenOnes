@@ -8,6 +8,11 @@ void pmv_ppd(
     const double& clo,
     double& pmv
 ) {
+    std::cout << "Input value ta = " << ta << "\n";
+    std::cout << "Input value v = " << v << "\n";
+    std::cout << "Input value rh = " << rh << "\n";
+    std::cout << "Input value met = " << met << "\n";
+    std::cout << "Input value clo = " << clo << "\n";
     double vr = (met > 1) ? std::round((v + 0.3 * (met - 1)) * 1000) / 1000.0 : v;
     double clo_d = (met > 1.2) ? std::round(clo * (0.6 + 0.4 / met) * 1000) / 1000.0 : clo;
     double pa = rh * 10 * std::exp(16.6536 - 4030.183 / (ta + 235));
@@ -48,6 +53,7 @@ void pmv_ppd(
 
     double ts = 0.303 * std::exp(-0.036 * m) + 0.028;
     pmv = round(100 * ts * (m - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)) / 100.0;
+    std::cout << "pmv value after using pmv_ppd function" << pmv << "\n";
     // ppd = round(10 * (100.0 - 95.0 * std::exp(-0.03353 * std::pow(pmv, 4.0) - 0.2179 * std::pow(pmv, 2.0)))) / 10;
 }
 
@@ -82,17 +88,20 @@ void PMV_Data::get_max_air_speed(int id) {
 
 void FanNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     double pmv_sum = 0;
-    for (int i = 0; i < 1; i++) {
+    std::cout << "Start to calc fan pmv sum\n";
+    for (int i = 1; i < 2+1; i++) {
         for (auto& item : sensor_env_list) {
             if (item.sensor_id == i) {
                 // item.get_data(i);
                 // item.cal_pmv(i);
                 pmv_sum += item.pmv;
+                std::cout  << "fan pmv sum is " << pmv_sum << "\n";
                 max_speed = item.wind_max;
             }
         }
     }
-    pmv_avg = pmv_sum / 1;
+    std::cout << "End calc fan pmv sum\n";
+    pmv_avg = pmv_sum / 2;
 }
 
 void FanNode::get_sensor_link(std::vector<int> sensorlinks) {
@@ -100,7 +109,7 @@ void FanNode::get_sensor_link(std::vector<int> sensorlinks) {
 }
 
 void FanNode::set_speed(double s) {
-    speed = s;
+    speed = s * 100.0 / 1.2;
     // more instruction here
 }
 
@@ -136,15 +145,18 @@ void FanNode::control_fan_pmv_model(std::vector<PMV_Data>& sensor_env_list, doub
 
 void ACNode::cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list) {
     double pmv_sum = 0;
-    for (int i = 0; i < 2; i++) {
+    std::cout << "Start to calc ac pmv sum\n";
+    for (int i = 1; i < 2+1; i++) {
         for (auto& item : sensor_env_list) {
             if (item.sensor_id == i) {
                 // item.get_data(i); // query
                 // item.cal_pmv(i);
                 pmv_sum += item.pmv;
+                std::cout << "ac Pmv sum is " << pmv_sum << "\n";
             }
         }
     }
+    std::cout << "End calc ac pmv sum\n";
     pmv_avg = pmv_sum / 2;
 }
 

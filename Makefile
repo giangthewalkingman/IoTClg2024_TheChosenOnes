@@ -5,10 +5,10 @@ CXX := g++
 CXXFLAGS := -std=c++17 -g -I./include
 
 # Define the library directories
-LDFLAGS := -L/usr/include/mariadb/mysql -lmariadbclient
+LDFLAGS := -L/usr/include/mariadb/mysql -lmariadbclient -lzmq
 
 # Define the source files
-SOURCES := src/main.cpp lib/control_actuator.cpp lib/database_access.cpp lib/z3gateway_comm.cpp
+SOURCES := src/main.cpp lib/control_actuator.cpp lib/database_access.cpp lib/z3gateway_comm.cpp lib/connection_pool.cpp lib/database_access_cnp.cpp
 
 # Define the output executable
 OUTPUT := main
