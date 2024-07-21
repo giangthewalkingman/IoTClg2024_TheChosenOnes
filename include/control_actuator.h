@@ -52,7 +52,7 @@ class FanNode {
 
         void cal_pmv_avg(std::vector<PMV_Data>& sensor_env_list);
         void get_sensor_link(std::vector<int> sensorlinks);
-        void set_speed(double s);
+        void set_speed(int s);
         void set_control_mode(int i);
         void set_time(int second);
         void control_fan_pmv_model(std::vector<PMV_Data>& sensor_env_list, double& pmv_ref);

@@ -108,8 +108,8 @@ void FanNode::get_sensor_link(std::vector<int> sensorlinks) {
     fan_sensorlinks = sensorlinks;
 }
 
-void FanNode::set_speed(double s) {
-    speed = s * 100.0 / 1.2;
+void FanNode::set_speed(int s) {
+    speed = s;
     // more instruction here
 }
 

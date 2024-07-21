@@ -18,8 +18,8 @@ execute_query() {
 
 # Insert data into PMVtable
 pmv_query="INSERT INTO PMVtable (id, met, clo, pmvref, outdoor_temp) VALUES
-(1, 1.2, 0.5, 0.5, 27.0),
-(2, 1.5, 0.7, 0.6, 26.5)"
+(1, 1.2, 0.5, -0.3, 25.0),
+(2, 1.5, 0.7, -0.3, 25.0)"
 execute_query "$pmv_query"
 
 # Insert data into RegistrationSensor
@@ -28,8 +28,8 @@ execute_query "$reg_sensor_query"
 
 # Insert data into SensorNode
 sensor_node_query="INSERT INTO SensorNode (temp, humid, wind, pm25, time, sensor_id) VALUES
-(27.5, 60.0, 1.5, 35, 1622559182, 1),
-(24.8, 55.0, 1.0, 30, 1622559182, 2)"
+(26.0, 50, 0.1, 35, 1622559182, 1),
+(26.0, 50, 0.1, 30, 1622559182, 2)"
 execute_query "$sensor_node_query"
 
 # Insert data into RegistrationEnergy

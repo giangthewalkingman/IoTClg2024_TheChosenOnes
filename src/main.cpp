@@ -305,6 +305,8 @@
 // Example control program function
 void control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq::socket_t& socket);
 void send_data(zmq::socket_t &socket, const std::vector<int>& data);
+void reset_control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq::socket_t &socket);
+void delay(std::chrono::milliseconds duration);
 
 int main() {
     // Database connection parameters
@@ -326,7 +328,9 @@ int main() {
     DatabaseAccessCnp dbAccess(connectionPool);
 
     // Run the control program
-    control_program(dbAccess, connectionPool, socket);
+    // control_program(dbAccess, connectionPool, socket);
+     std::thread resetThread(reset_control_program, std::ref(dbAccess), std::ref(connectionPool), std::ref(socket));
+     resetThread.join();
 
     return 0;
 }
@@ -360,6 +364,7 @@ void control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq:
         PMV_Data pmv_data(id, temp, humid, wind);
         pmv_ppd(temp, wind, humid, met, clo, pmv_data.pmv);
         pmv_data.get_max_air_speed(id);
+        std::cout << pmv_data.wind_max << "\n";
         sensor_env_list.push_back(pmv_data);
         std::cout << "Current pmv is " << pmv_data.pmv << "\n";
     }
@@ -438,13 +443,19 @@ void control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq:
                         printf("pmv is %lf\n", item2.pmv);
                     }
                     item.set_speed(item.speed - SPEED_STEP);
+                    if (item.speed < 0)
+                        item.set_speed(0);
+                    std::vector<int> send_fan_data = {0, item.fan_id, item.speed};
+                    send_data(socket,  send_fan_data);
                     printf("control fan: %d%\n", item.speed);
+
                     item.cal_pmv_avg(sensor_env_list);
                     pmv_diff = item.pmv_avg - pmv_ref;
+                    delay(std::chrono::seconds(5));
                 } while (pmv_diff < PMV_DIFF_THRESHOLD && pmv_diff > (-1 * PMV_DIFF_THRESHOLD));
-                if (item.speed > item.max_speed) {
+                if (item.speed >= item.max_speed * 100.0 / 1.2) {
                     if (item.pmv_avg > -0.5) {
-                        item.set_speed(item.max_speed);
+                        item.set_speed(100);
                         printf("control fan: %d%\n", item.speed);
                     }
                     else {
@@ -455,7 +466,7 @@ void control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq:
                     send_data(socket,  send_fan_data);
                 }
             } else if (item.pmv_avg >= 0.5) {
-                item.set_speed(item.max_speed);
+                item.set_speed(100);
                 printf("control fan: %d%\n", item.speed);
                 std::vector<int> send_fan_data = {0, item.fan_id, (int)item.speed};
                 send_data(socket,  send_fan_data);
@@ -493,4 +504,27 @@ void send_data(zmq::socket_t &socket, const std::vector<int>& data) {
     zmq::message_t message(data_str.size());
     memcpy(message.data(), data_str.data(), data_str.size());
     socket.send(message, zmq::send_flags::none);
+}
+
+void reset_control_program(DatabaseAccessCnp& db, ConnectionPool& connectionPool, zmq::socket_t &socket) {
+    while (true) {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // Start a new thread to run control_program
+        std::thread control_thread(control_program, std::ref(db), std::ref(connectionPool), std::ref(socket));
+        control_thread.detach(); // Detach the thread to allow it to run independently
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        
+        // Print the working time of control_program
+        // std::cout << "control_program started at: " << start.time_since_epoch().count() << " and took: " << elapsed.count() << " seconds\n";
+
+        // Sleep for 10 seconds before starting the next control program
+        std::this_thread::sleep_for(std::chrono::minutes(5)); //Reset after 5 mins
+    }
+}
+
+void delay(std::chrono::milliseconds duration) {
+    std::this_thread::sleep_for(duration);
 }
